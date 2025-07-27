@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TWPLU</title>
+    <title>twplu</title>
 </head>
 <body>
     <script type="module">
@@ -16,22 +16,32 @@
         let a, b, c, d = null; // a: app, b: db, c: auth, d: userId
         let e = false; // e: isAuthReady - флаг готовности аутентификации
 
-        const FIREBASE_CONFIG_URL = "https://raw.githubusercontent.com/twplug/twplug.github.io/refs/heads/main/Firebase.json";
+        // --- Firebase Configuration (ВСТРОЕНА ДЛЯ ТЕСТА) ---
+        const FIREBASE_CONFIG = {
+            "type": "service_account",
+            "project_id": "twplub",
+            "private_key_id": "54a8db1915145fae98492495dc5fdfa2383d3164",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC/EW3hH6eyTif8\nmQ8tTt9ull+iUOTuqH2zzywBLzIP/uYbmlpWVURgEGNRuYfUAityzrlb6s8FsHTF\nuggca6qfAqR/O8CyflTq4lfgit4uPl1XgZhcwiHI7a95F6I2XNjXkKWW0w0yKITF\n6rTKS4Zk6pJ+vO2RUQRnqR/8GbWXoIxjMBphc9ojy3IMzEMfVJJcwH9W9eq+ryxO\nb1O2CpCLjeDeTMuBHjbVZ/f1VIuXBzXO7W6hP0p1YmdmIW1EVnVxkDqjO52m7ci3\nBq1MBKXvsKjATblyqiqYmmy/Vvhk62rH0iAEJUzE1DGrTvYQwlYnFoj05b7p2qo+\nSXHP/FYLAgMBAAECggEAQY8ia6dn7AdjMwn1qi8w/Qn9wH0PQFBx6TuBttpRzClD\nHV+F9a+GKYwV+Bm34GfqLpd+BGr6I9KbDqk5VT8gKTVH6hw/jz9Htdx6GKKtf6KI\ndpkSBWnbG81qcxtH3m1XPgf0uV6rXXWHsT1KUUs+zuup3nDG9yCcaVEfl2ne5Cpr\nlRV0AkqnW0V8YFl4+Pd9lzTygSp6UqXlXVjX7h9mEKmp8vEwC6IjcO/6D+4SGZnD\n6f9e78Czhp2bcdYGwq+Q6HtT/TPx9hwHp2SmXoWCV0kQDnok5hNOYixF18grwvmy\nD0Rv+rjIdOQNhfcpkxEDmCVFGHvurO4VnH+groi0+QKBgQDhH8JNrpJr6SEhvKoL\nCTsGd5oofR9SSKoWE7DXdPhkaJEnztzavWs4c2xyiZIMsvkLPVqA3akadq6dA9Lj\nz+Fv9ZZ8IGD9A16M4jBI1ZpQS9bKWLSXxsCaXkiFycLvcvfuewK9yztEWx6B/hs9\nfKikromRPJY+GZy/hwg0l8cGFwKBgQDZRfHHAm1KmNO76I9+bN23H/1HeCkjUIdY\nszAtgkyyfn9rcj2ThGlWB7A8hykOloGzQ2fczMco6QZlDuZObihoyhqMbOIJbmfy\n8aXXQqzDiRrHSc2TMZ6JBwaj2Q9vZxRc+IDXF6EIytXRzoE+COLBlt5lryspmXaM\nQNIXdLBcLQKBgDHUP8PGAi7UeTrocZLjxibWTk7r8wTZhJxCW4A1Kc2/v3FaPlRE\nXPkvwy9O9/7LlohAWknvxkBPSLMEZ6d5GeMYLujmmdEm78SrRBi6/t8LCk3beI2n\ntnX0rITAdd9eSTaGD8NGuqWUrZoETq87anCZGWYGTRMNxD44ez544dqdAoGBAJgg\nyCPeiCWGEiJsuCP+F9ODm3SyJqOqW8n4VNBYflkwBwl1SLYELTjmUzheLpofOZsJ\npCxOWVhEqIyTvR/HM5YDhEk0Z6PQ4QmSttqcvZh/Y/eLrlvUjztEZxrL/Wm0E+bw\nvE1eJwuf8cxgOc/0qsh/WSJ7Xs5WvFGBhViVBHLVAoGBALZ54OBPxKQ/ejoehGQV\nqQNDi7S5OSFZLFG9SKJFgupwoRnmQwzNVAfn3ce7ntQKz9l2YAjQl7Y2fcZh/gWD\nSyfqy9dwSEajd1/jq7172Ew0nVCKWfryZSH0AsTzVLflT9hojAGW8nTJj/r7dcTH\nCjq32UK1LuUMSbrT0bN5cFPj\n-----END PRIVATE KEY-----\n",
+            "client_email": "firebase-adminsdk-fbsvc@twplub.iam.gserviceaccount.com",
+            "client_id": "111571502504036179083",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40twplub.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+        };
+        // --- Конец встроенной конфигурации ---
 
         // Функция инициализации Firebase и аутентификации
         async function m() { // m: initializeAppAndAuth
             try {
-                // Загрузка конфигурации Firebase с удаленного URL
-                const response = await fetch(FIREBASE_CONFIG_URL);
-                if (!response.ok) {
-                    throw new Error(`Ошибка загрузки конфигурации Firebase: ${response.statusText}`);
-                }
-                const q = await response.json(); // q: firebaseConfig
+                // Используем встроенную конфигурацию напрямую
+                const q = FIREBASE_CONFIG;
 
                 // Проверка на наличие необходимых полей в конфигурации
-                if (!q || !q.projectId) { // apiKey не всегда нужен для service_account type
-                    console.error("[ERROR] Конфигурация Firebase не найдена или неполна (отсутствует projectId). Функционал базы данных будет недоступен.");
-                    return; // Прекратить выполнение, если конфигурация недействительна
+                if (!q || !q.projectId) {
+                    console.error("[ERROR] Встроенная конфигурация Firebase неполна (отсутствует projectId). Функционал базы данных будет недоступен.");
+                    return;
                 }
 
                 // Инициализация Firebase
@@ -48,7 +58,7 @@
                         o(); // o: processUrlParams - Обработка URL-параметров после загрузки ID
                     } else {
                         try {
-                            // Попытка анонимного входа, так как кастомный токен не предусмотрен в этой конфигурации
+                            // Попытка анонимного входа
                             await signInAnonymously(c);
                         } catch (error) {
                             console.error("[ERROR] Ошибка аутентификации Firebase:", error);
@@ -63,8 +73,6 @@
 
         // Функция для получения ссылки на коллекцию Firestore
         function n(p) { // n: getCollectionRef, p: collectionName
-            // Для этой конфигурации нам не нужен __app_id, так как project_id уже находится в конфигурации.
-            // Путь к публичным данным в Firestore
             return collection(b, `artifacts/${a.options.projectId}/public/data/${p}`);
         }
 
@@ -286,7 +294,7 @@
 
             const v = window.location.search; // v: fullQueryString
             // Проверка на параметр приглашения вида ?{id}invite{id}
-            const w = v.match(/\?(\w+)invite(\w+)/); // w: inviteMatch (изменено на \w+ для поддержки любых символов в ID)
+            const w = v.match(/\?(\w+)invite(\w+)/); // w: inviteMatch
             if (w) {
                 u = true;
                 const x = w[1]; // x: id1
