@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>twplu</title>
-    <!-- Tailwind CSS и Inter Font удалены, так как нет UI -->
+    <title>TWPLU</title>
 </head>
 <body>
     <script type="module">
@@ -17,28 +16,21 @@
         let a, b, c, d = null; // a: app, b: db, c: auth, d: userId
         let e = false; // e: isAuthReady - флаг готовности аутентификации
 
+        const FIREBASE_CONFIG_URL = "https://raw.githubusercontent.com/twplug/twplug.github.io/refs/heads/main/Firebase.json";
+
         // Функция инициализации Firebase и аутентификации
         async function m() { // m: initializeAppAndAuth
             try {
-                // Получение ID приложения из глобальной переменной __app_id, предоставленной средой Canvas
-                const p = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                let q = null; // q: firebaseConfig, явно null, если не найдена/распарсена
-
-                // Попытка парсинга конфигурации Firebase из глобальной переменной __firebase_config
-                if (typeof __firebase_config !== 'undefined' && __firebase_config !== null && __firebase_config !== '') {
-                    try {
-                        q = JSON.parse(__firebase_config);
-                    } catch (parseError) {
-                        console.error("[ERROR] Ошибка парсинга конфигурации Firebase:", parseError);
-                        console.error("[ERROR] Конфигурация Firebase недействительна. Функционал базы данных будет недоступен.");
-                        return; // Прекратить выполнение, если парсинг не удался
-                    }
+                // Загрузка конфигурации Firebase с удаленного URL
+                const response = await fetch(FIREBASE_CONFIG_URL);
+                if (!response.ok) {
+                    throw new Error(`Ошибка загрузки конфигурации Firebase: ${response.statusText}`);
                 }
+                const q = await response.json(); // q: firebaseConfig
 
-                // Проверка, является ли конфигурация все еще null или явно недействительной (например, отсутствует projectId)
-                if (!q || !q.projectId || !q.apiKey) {
-                    console.error("[ERROR] Конфигурация Firebase не найдена или неполна. Функционал базы данных будет недоступен.");
-                    console.info("[INFO] Убедитесь, что приложение запущено в среде Canvas или на правильно настроенном веб-сервере.");
+                // Проверка на наличие необходимых полей в конфигурации
+                if (!q || !q.projectId) { // apiKey не всегда нужен для service_account type
+                    console.error("[ERROR] Конфигурация Firebase не найдена или неполна (отсутствует projectId). Функционал базы данных будет недоступен.");
                     return; // Прекратить выполнение, если конфигурация недействительна
                 }
 
@@ -56,13 +48,8 @@
                         o(); // o: processUrlParams - Обработка URL-параметров после загрузки ID
                     } else {
                         try {
-                            // Попытка входа с кастомным токеном или анонимно
-                            const s = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                            if (s) {
-                                await signInWithCustomToken(c, s);
-                            } else {
-                                await signInAnonymously(c);
-                            }
+                            // Попытка анонимного входа, так как кастомный токен не предусмотрен в этой конфигурации
+                            await signInAnonymously(c);
                         } catch (error) {
                             console.error("[ERROR] Ошибка аутентификации Firebase:", error);
                             console.error("[ERROR] Не удалось аутентифицироваться. Функционал базы данных будет недоступен.");
@@ -76,9 +63,9 @@
 
         // Функция для получения ссылки на коллекцию Firestore
         function n(p) { // n: getCollectionRef, p: collectionName
-            const q = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            // Для этой конфигурации нам не нужен __app_id, так как project_id уже находится в конфигурации.
             // Путь к публичным данным в Firestore
-            return collection(b, `artifacts/${q}/public/data/${p}`);
+            return collection(b, `artifacts/${a.options.projectId}/public/data/${p}`);
         }
 
         // Логика разрыва соединения между двумя пользователями
@@ -169,7 +156,7 @@
                 u += 'Входящие приглашения (ожидают ответа):\n';
                 w.forEach(x => { // x: doc
                     const y = x.data(); // y: inviteData
-                    u += `  От: ${y.senderId} (Принять: /?${userId}invite${y.senderId})\n`;
+                    u += `   От: ${y.senderId} (Принять: /?${userId}invite${y.senderId})\n`;
                 });
             }
 
@@ -185,7 +172,7 @@
                 u += 'Исходящие приглашения (ожидают ответа):\n';
                 y.forEach(z => { // z: doc
                     const A = z.data(); // A: inviteData
-                    u += `  Кому: ${A.receiverId} (Отменить: /?invkill=${userId} - удалит все)\n`;
+                    u += `   Кому: ${A.receiverId} (Отменить: /?invkill=${userId} - удалит все)\n`;
                 });
             }
 
@@ -193,7 +180,7 @@
             const z = query(t, where("user1Id", "==", userId)); // z: connectionsWhereUser1
             const A = query(t, where("user2Id", "==", userId)); // A: connectionsWhereUser2
 
-            const [B, C] = await Promise.ll([ // B: snapshot1, C: snapshot2
+            const [B, C] = await Promise.all([ // B: snapshot1, C: snapshot2
                 getDocs(z),
                 getDocs(A)
             ]);
@@ -213,7 +200,7 @@
             } else {
                 u += 'Активные соединения:\n';
                 D.forEach(E => { // E: connectionString
-                    u += `  ${E} (Отключить: /?disconn=${E})\n`;
+                    u += `   ${E} (Отключить: /?disconn=${E})\n`;
                 });
             }
             console.log(`[INFO] Список приглашений и соединений для ${userId}:\n${u}`);
@@ -299,7 +286,7 @@
 
             const v = window.location.search; // v: fullQueryString
             // Проверка на параметр приглашения вида ?{id}invite{id}
-            const w = v.match(/\?(\d+)invite(\d+)/); // w: inviteMatch
+            const w = v.match(/\?(\w+)invite(\w+)/); // w: inviteMatch (изменено на \w+ для поддержки любых символов в ID)
             if (w) {
                 u = true;
                 const x = w[1]; // x: id1
