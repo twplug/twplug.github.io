@@ -3,319 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase API (без UI)</title>
+    <title>Connector</title>
+    <style>body{font-family:monospace;white-space:pre;background:#0d1117;color:#c9d1d9;padding:1em;}</style>
 </head>
 <body>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Глобальные переменные для Firebase
-        let firebaseApp;
-        let firestoreDb;
-        let firebaseAuth;
-        let currentUserId = null;
-        let isAuthReady = false;
-
-        // Функции для логирования статуса и ошибок в консоль
-        function logError(message) {
-            console.error(`Ошибка Firebase API: ${message}`);
-        }
-
-        function logStatus(message) {
-            console.log(`Статус Firebase API: ${message}`);
-        }
-
-        /**
-         * Инициализирует Firebase и настраивает слушатель состояния аутентификации.
-         * Эта функция должна быть вызвана первой.
-         */
-        export async function initializeFirebaseAPI() {
-            try {
-                // Используем глобальные переменные, предоставленные средой Canvas
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-
-                if (!firebaseConfig || !firebaseConfig.projectId) {
-                    logError("Firebase config не найден или неполный.");
-                    return;
-                }
-
-                firebaseApp = initializeApp(firebaseConfig);
-                firestoreDb = getFirestore(firebaseApp);
-                firebaseAuth = getAuth(firebaseApp);
-
-                onAuthStateChanged(firebaseAuth, async (user) => {
-                    if (user) {
-                        currentUserId = user.uid;
-                        isAuthReady = true;
-                        logStatus("Firebase инициализирован. Ваш ID: " + currentUserId);
+    Initializing...
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script>
+        const x = ["myUID", "DOMContentLoaded", "invite", "invites", "connections", "pending", "invlist=", "invkill=", "value", "split", "substring", "getItem", "setItem", "startsWith", "includes", "innerHTML", "pre", "ВАШ ID: ", "\n\n> Отправить приглашение (откройте в новой вкладке):\n?ID_ОТПРАВИТЕЛЯ", "ID_ПОЛУЧАТЕЛЯ\n\n> Проверить ваши приглашения:\n?", "\n\n> Удалить ваши отправленные приглашения:\n?", "Ошибка: Неверный формат приглашения. Используйте ?ID1inviteID2", "Соединение установлено: ", "Приглашение отправлено от ", " к ", ". Ожидание ответного приглашения.", "Ошибка: ID пользователя не указан для invlist.", "Отправленные приглашения для ", ":\n", "  - Кому: ", " (статус: ", ")", "\n", "Нет отправленных приглашений для ", ".\n\n", "Входящие приглашения для ", ":\n", "  - От: ", "Входящих приглашений не найдено.", "Ошибка: ID пользователя не указан для invkill.", "Все отправленные приглашения для ", " были удалены.", "Ошибка при удалении приглашений: ", "Неизвестная команда. Ваш ID: "];
+        const y = {apiKey: "AIzaSyCbbbkstsx0b7GMuF2THRZvF7g_IF9bmdY", authDomain: "twplub.firebaseapp.com", databaseURL: "https://twplub-default-rtdb.firebaseio.com", projectId: "twplub", storageBucket: "twplub.firebasestorage.app", messagingSenderId: "774675126793", appId: "1:774675126793:web:d4dbc1c76cca733af8b6d8" };
+        firebase.initializeApp(y);
+        const z = firebase.database();
+        document.addEventListener(x[1], () => {
+            const a = window.location.search[x[10]](1);
+            const b = document.body;
+            const c = (m) => { b[x[15]] = `<${x[16]}>${m}</${x[16]}>`; };
+            let d = localStorage[x[11]](x[0]);
+            if (!d) { d = Math.random().toString(36)[x[10]](2, 12); localStorage[x[12]](x[0], d); }
+            if (!a) { c(`${x[17]}${d}${x[18]}${d}${x[2]}${x[19]}${x[20]}${x[6]}${d}${x[21]}${x[7]}${d}`); return; }
+            if (a[x[14]](x[2])) {
+                const e = a[x[9]](x[2]);
+                const f = e[0];
+                const g = e[1];
+                if (!f || !g) { c(x[22]); return; }
+                z.ref(`${x[3]}/${g}/${f}`).once(x[8], h => {
+                    if (h.exists()) {
+                        const i = `${f}+${g}`;
+                        z.ref(`${x[4]}/${f}`).set(i);
+                        z.ref(`${x[4]}/${g}`).set(i);
+                        z.ref(`${x[3]}/${f}`).remove();
+                        z.ref(`${x[3]}/${g}`).remove();
+                        c(`${x[23]}${i}`);
                     } else {
-                        try {
-                            // Если токен не предоставлен, анонимная аутентификация удалена.
-                            // Пользователь должен быть аутентифицирован с помощью __initial_auth_token.
-                            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(firebaseAuth, initialAuthToken);
-                            } else {
-                                logError("Пользователь не аутентифицирован. Токен аутентификации не предоставлен.");
-                            }
-                        } catch (error) {
-                            logError("Ошибка аутентификации: " + error.message);
-                        }
+                        z.ref(`${x[3]}/${f}/${g}`).set(x[5]);
+                        c(`${x[24]}${f}${x[25]}${g}${x[26]}`);
                     }
                 });
-            } catch (error) {
-                logError("Ошибка инициализации Firebase: " + error.message);
-            }
-        }
-
-        /**
-         * Возвращает ссылку на коллекцию в Firestore.
-         * @param {string} collectionName - Имя коллекции.
-         * @returns {import('firebase/firestore').CollectionReference} Ссылка на коллекцию.
-         */
-        function getPublicCollectionRef(collectionName) {
-            if (!firestoreDb || !firebaseApp || !firebaseApp.options.projectId) {
-                throw new Error("Firebase не инициализирован или projectId отсутствует.");
-            }
-            return collection(firestoreDb, `artifacts/${firebaseApp.options.projectId}/public/data/${collectionName}`);
-        }
-
-        /**
-         * Удаляет существующее соединение между двумя пользователями.
-         * @param {string} user1 - ID первого пользователя.
-         * @param {string} user2 - ID второго пользователя.
-         */
-        export async function deleteConnection(user1, user2) {
-            if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
                 return;
             }
-            if (!user1 || !user2) {
-                logError("Пожалуйста, введите оба ID пользователя для разрыва соединения.");
-                return;
-            }
-            const connectionsCol = getPublicCollectionRef('connections');
-            const sortedIds = [user1, user2].sort();
-            const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
-            try {
-                await deleteDoc(doc(connectionsCol, connectionId));
-                logStatus(`Соединение ${connectionId} разорвано.`);
-            } catch (error) {
-                logError("Ошибка при разрыве соединения: " + error.message);
-            }
-        }
-
-        /**
-         * Отправляет или принимает приглашение на соединение.
-         * @param {string} senderId - ID отправителя.
-         * @param {string} receiverId - ID получателя.
-         */
-        export async function sendOrAcceptInvite(senderId, receiverId) {
-            if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
-                return;
-            }
-            if (!senderId || !receiverId) {
-                logError("Пожалуйста, введите ID отправителя и получателя.");
-                return;
-            }
-            const invitesCol = getPublicCollectionRef('invites');
-
-            try {
-                // Проверяем, есть ли уже исходящее приглашение от отправителя к получателю
-                const existingInviteQuery = query(invitesCol,
-                    where("senderId", "==", senderId),
-                    where("receiverId", "==", receiverId)
-                );
-                const existingInvites = await getDocs(existingInviteQuery);
-
-                if (!existingInvites.empty) {
-                    logStatus(`Приглашение от ${senderId} к ${receiverId} уже существует.`);
-                    return;
-                }
-
-                // Проверяем, есть ли входящее приглашение от получателя к отправителю (для принятия)
-                const reverseInviteQuery = query(invitesCol,
-                    where("senderId", "==", receiverId),
-                    where("receiverId", "==", senderId),
-                    where("status", "==", "pending")
-                );
-                const reverseInvites = await getDocs(reverseInviteQuery);
-
-                if (!reverseInvites.empty) {
-                    // Если есть обратное приглашение, принимаем его и создаем соединение
-                    const inviteDoc = reverseInvites.docs[0];
-                    await updateDoc(doc(invitesCol, inviteDoc.id), { status: "accepted" });
-
-                    const connectionsCol = getPublicCollectionRef('connections');
-                    const sortedIds = [senderId, receiverId].sort();
-                    const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
-                    await setDoc(doc(connectionsCol, connectionId), {
-                        user1Id: sortedIds[0],
-                        user2Id: sortedIds[1],
-                        establishedAt: new Date().toISOString()
+            if (a[x[13]](x[6])) {
+                const j = a[x[9]]('=')[1];
+                if (!j) { c(x[27]); return; }
+                z.ref(`${x[3]}/${j}`).once(x[8], k => {
+                    let l = `${x[36]}${j}${x[37]}`;
+                    if (k.exists()) {
+                        const m = k.val();
+                        const n = Object.keys(m).map(o => `${x[32]}${o}${x[33]}${m[o]}${x[34]}`).join(x[35]);
+                        l = `${x[31]}${j}${x[31.5]}${n}`;
+                    }
+                    z.ref(x[3]).once(x[8], p => {
+                        let q = `${x[41]}`;
+                        let r = [];
+                        if (p.exists()) { p.forEach(s => { if (s.val()[j]) { r.push(`${x[40]}${s.key}`); } }); }
+                        if (r.length > 0) { q = `${x[38]}${j}${x[39]}${r.join(x[35])}`; }
+                        c(`${l}${x[37]}${q}`);
                     });
-
-                    await deleteDoc(doc(invitesCol, inviteDoc.id)); // Удаляем приглашение после создания соединения
-                    logStatus(`Приглашение от ${receiverId} принято. Соединение между ${senderId} и ${receiverId} установлено.`);
-                    return;
-                }
-
-                // Если нет существующих или обратных приглашений, отправляем новое
-                await addDoc(invitesCol, {
-                    senderId: senderId,
-                    receiverId: receiverId,
-                    timestamp: new Date().toISOString(),
-                    status: "pending"
                 });
-                logStatus(`Приглашение отправлено от ${senderId} к ${receiverId}.`);
-
-            } catch (error) {
-                logError("Ошибка при отправке/принятии приглашения: " + error.message);
-            }
-        }
-
-        /**
-         * Просматривает и возвращает входящие, исходящие приглашения и активные соединения.
-         * @param {string} userId - ID пользователя для просмотра.
-         * @returns {Promise<object>} Объект с приглашениями и соединениями.
-         */
-        export async function viewUserStatus(userId) {
-            if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
-                return { error: "Пользователь не аутентифицирован." };
-            }
-            if (!userId) {
-                logError("Пожалуйста, введите ID пользователя для просмотра статуса.");
-                return { error: "ID пользователя не указан." };
-            }
-            const invitesCol = getPublicCollectionRef('invites');
-            const connectionsCol = getPublicCollectionRef('connections');
-
-            let statusData = {
-                incomingInvites: [],
-                outgoingInvites: [],
-                activeConnections: []
-            };
-
-            try {
-                // Входящие приглашения
-                const incomingInvitesQuery = query(invitesCol,
-                    where("receiverId", "==", userId),
-                    where("status", "==", "pending")
-                );
-                const incomingInvites = await getDocs(incomingInvitesQuery);
-                incomingInvites.forEach(doc => {
-                    statusData.incomingInvites.push(doc.data());
-                });
-
-                // Исходящие приглашения
-                const outgoingInvitesQuery = query(invitesCol,
-                    where("senderId", "==", userId),
-                    where("status", "==", "pending")
-                );
-                const outgoingInvites = await getDocs(outgoingInvitesQuery);
-                outgoingInvites.forEach(doc => {
-                    statusData.outgoingInvites.push(doc.data());
-                });
-
-                // Активные соединения
-                const connectionsAsUser1Query = query(connectionsCol, where("user1Id", "==", userId));
-                const connectionsAsUser2Query = query(connectionsCol, where("user2Id", "==", userId));
-
-                const [connectionsAsUser1, connectionsAsUser2] = await Promise.all([
-                    getDocs(connectionsAsUser1Query),
-                    getDocs(connectionsAsUser2Query)
-                ]);
-
-                const activeConnectionsSet = new Set();
-                connectionsAsUser1.forEach(doc => {
-                    const data = doc.data();
-                    activeConnectionsSet.add(`Соединение: ${data.user1Id} <-> ${data.user2Id} (Установлено: ${new Date(data.establishedAt).toLocaleString()})`);
-                });
-                connectionsAsUser2.forEach(doc => {
-                    const data = doc.data();
-                    activeConnectionsSet.add(`Соединение: ${data.user1Id} <-> ${data.user2Id} (Установлено: ${new Date(data.establishedAt).toLocaleString()})`);
-                });
-                statusData.activeConnections = Array.from(activeConnectionsSet);
-
-                logStatus(`Статус для пользователя ${userId}:\n${JSON.stringify(statusData, null, 2)}`);
-                return statusData;
-
-            } catch (error) {
-                logError("Ошибка при просмотре статуса: " + error.message);
-                return { error: error.message };
-            }
-        }
-
-        /**
-         * Очищает все ожидающие приглашения, отправленные или полученные пользователем.
-         * @param {string} userId - ID пользователя для очистки приглашений.
-         */
-        export async function clearPendingInvites(userId) {
-            if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
                 return;
             }
-            if (!userId) {
-                logError("Пожалуйста, введите ID пользователя для очистки приглашений.");
+            if (a[x[13]](x[7])) {
+                const t = a[x[9]]('=')[1];
+                if (!t) { c(x[42]); return; }
+                z.ref(`${x[3]}/${t}`).remove().then(() => { c(`${x[43]}${t}${x[44]}`); }).catch(e => { c(`${x[45]}${e.message}`); });
                 return;
             }
-            const invitesCol = getPublicCollectionRef('invites');
-
-            try {
-                let deletedCount = 0;
-                // Удаляем исходящие приглашения
-                const outgoingQuery = query(invitesCol,
-                    where("senderId", "==", userId),
-                    where("status", "==", "pending")
-                );
-                const outgoingDocs = await getDocs(outgoingQuery);
-                for (const docSnapshot of outgoingDocs.docs) {
-                    await deleteDoc(doc(invitesCol, docSnapshot.id));
-                    deletedCount++;
-                }
-
-                // Удаляем входящие приглашения
-                const incomingQuery = query(invitesCol,
-                    where("receiverId", "==", userId),
-                    where("status", "==", "pending")
-                );
-                const incomingDocs = await getDocs(incomingQuery);
-                for (const docSnapshot of incomingDocs.docs) {
-                    await deleteDoc(doc(invitesCol, docSnapshot.id));
-                    deletedCount++;
-                }
-
-                logStatus(`Все ожидающие приглашения для ${userId} очищены. Удалено: ${deletedCount}.`);
-
-            } catch (error) {
-                logError("Ошибка при очистке приглашений: " + error.message);
-            }
-        }
-
-        /**
-         * Возвращает текущий ID пользователя.
-         * @returns {string|null} Текущий ID пользователя или null, если не аутентифицирован.
-         */
-        export function getCurrentUserId() {
-            return currentUserId;
-        }
-
-        /**
-         * Проверяет, готов ли Firebase к работе (пользователь аутентифицирован).
-         * @returns {boolean} True, если Firebase готов, иначе false.
-         */
-        export function isFirebaseReady() {
-            return isAuthReady;
-        }
-
-        // Автоматическая инициализация Firebase при загрузке скрипта
-        // Это позволяет функциям быть доступными сразу после загрузки.
-        initializeFirebaseAPI();
+            c(`${x[46]}${d}`);
+        });
     </script>
 </body>
 </html>
