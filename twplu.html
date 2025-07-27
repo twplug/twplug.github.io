@@ -3,203 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>twplu</title>
+    <title>TwPlU</title>
 </head>
 <body>
     <script type="module">
-        // Импорт необходимых модулей Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Глобальные переменные для Firebase и состояния приложения
-        let a, b, c, d = null; // a: app, b: db, c: auth, d: userId
-        let e = false; // e: isAuthReady - флаг готовности аутентификации
+        let a, b, c, d = null;
+        let e = false;
 
-        // --- Firebase Configuration (ВСТРОЕНА ДЛЯ ТЕСТА) ---
-        const FIREBASE_CONFIG = {
-            "type": "service_account",
-            "project_id": "twplub",
-            "private_key_id": "54a8db1915145fae98492495dc5fdfa2383d3164",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC/EW3hH6eyTif8\nmQ8tTt9ull+iUOTuqH2zzywBLzIP/uYbmlpWVURgEGNRuYfUAityzrlb6s8FsHTF\nuggca6qfAqR/O8CyflTq4lfgit4uPl1XgZhcwiHI7a95F6I2XNjXkKWW0w0yKITF\n6rTKS4Zk6pJ+vO2RUQRnqR/8GbWXoIxjMBphc9ojy3IMzEMfVJJcwH9W9eq+ryxO\nb1O2CpCLjeDeTMuBHjbVZ/f1VIuXBzXO7W6hP0p1YmdmIW1EVnVxkDqjO52m7ci3\nBq1MBKXvsKjATblyqiqYmmy/Vvhk62rH0iAEJUzE1DGrTvYQwlYnFoj05b7p2qo+\nSXHP/FYLAgMBAAECggEAQY8ia6dn7AdjMwn1qi8w/Qn9wH0PQFBx6TuBttpRzClD\nHV+F9a+GKYwV+Bm34GfqLpd+BGr6I9KbDqk5VT8gKTVH6hw/jz9Htdx6GKKtf6KI\ndpkSBWnbG81qcxtH3m1XPgf0uV6rXXWHsT1KUUs+zuup3nDG9yCcaVEfl2ne5Cpr\nlRV0AkqnW0V8YFl4+Pd9lzTygSp6UqXlXVjX7h9mEKmp8vEwC6IjcO/6D+4SGZnD\n6f9e78Czhp2bcdYGwq+Q6HtT/TPx9hwHp2SmXoWCV0kQDnok5hNOYixF18grwvmy\nD0Rv+rjIdOQNhfcpkxEDmCVFGHvurO4VnH+groi0+QKBgQDhH8JNrpJr6SEhvKoL\nCTsGd5oofR9SSKoWE7DXdPhkaJEnztzavWs4c2xyiZIMsvkLPVqA3akadq6dA9Lj\nz+Fv9ZZ8IGD9A16M4jBI1ZpQS9bKWLSXxsCaXkiFycLvcvfuewK9yztEWx6B/hs9\nfKikromRPJY+GZy/hwg0l8cGFwKBgQDZRfHHAm1KmNO76I9+bN23H/1HeCkjUIdY\nszAtgkyyfn9rcj2ThGlWB7A8hykOloGzQ2fczMco6QZlDuZObihoyhqMbOIJbmfy\n8aXXQqzDiRrHSc2TMZ6JBwaj2Q9vZxRc+IDXF6EIytXRzoE+COLBlt5lryspmXaM\nQNIXdLBcLQKBgDHUP8PGAi7UeTrocZLjxibWTk7r8wTZhJxCW4A1Kc2/v3FaPlRE\nXPkvwy9O9/7LlohAWknvxkBPSLMEZ6d5GeMYLujmmdEm78SrRBi6/t8LCk3beI2n\ntnX0rITAdd9eSTaGD8NGuqWUrZoETq87anCZGWYGTRMNxD44ez544dqdAoGBAJgg\nyCPeiCWGEiJsuCP+F9ODm3SyJqOqW8n4VNBYflkwBwl1SLYELTjmUzheLpofOZsJ\npCxOWVhEqIyTvR/HM5YDhEk0Z6PQ4QmSttqcvZh/Y/eLrlvUjztEZxrL/Wm0E+bw\nvE1eJwuf8cxgOc/0qsh/WSJ7Xs5WvFGBhViVBHLVAoGBALZ54OBPxKQ/ejoehGQV\nqQNDi7S5OSFZLFG9SKJFgupwoRnmQwzNVAfn3ce7ntQKz9l2YAjQl7Y2fcZh/gWD\nSyfqy9dwSEajd1/jq7172Ew0nVCKWfryZSH0AsTzVLflT9hojAGW8nTJj/r7dcTH\nCjq32UK1LuUMSbrT0bN5cFPj\n-----END PRIVATE KEY-----\n",
-            "client_email": "firebase-adminsdk-fbsvc@twplub.iam.gserviceaccount.com",
-            "client_id": "111571502504036179083",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40twplub.iam.gserviceaccount.com",
-            "universe_domain": "googleapis.com"
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbbbkstsx0b7GMuF2THRZvF7g_IF9bmdY",
+            authDomain: "twplub.firebaseapp.com",
+            databaseURL: "https://twplub-default-rtdb.firebaseio.com",
+            projectId: "twplub",
+            storageBucket: "twplub.firebasestorage.app",
+            messagingSenderId: "774675126793",
+            appId: "1:774675126793:web:d4dbc1c76cca733af8b6d8"
         };
-        // --- Конец встроенной конфигурации ---
 
-        // Функция инициализации Firebase и аутентификации
-        async function m() { // m: initializeAppAndAuth
+        async function m() {
             try {
-                // Используем встроенную конфигурацию напрямую
-                const q = FIREBASE_CONFIG;
+                const q = firebaseConfig;
 
-                // Проверка на наличие необходимых полей в конфигурации
                 if (!q || !q.projectId) {
-                    console.error("[ERROR] Встроенная конфигурация Firebase неполна (отсутствует projectId). Функционал базы данных будет недоступен.");
                     return;
                 }
 
-                // Инициализация Firebase
                 a = initializeApp(q);
                 b = getFirestore(a);
                 c = getAuth(a);
 
-                // Слушатель изменений состояния аутентификации
-                onAuthStateChanged(c, async (r) => { // r: user
+                onAuthStateChanged(c, async (r) => {
                     if (r) {
-                        d = r.uid; // d: userId
-                        e = true; // e: isAuthReady
-                        console.log(`[INFO] Ваш ID пользователя: ${d}`);
-                        o(); // o: processUrlParams - Обработка URL-параметров после загрузки ID
+                        d = r.uid;
+                        e = true;
+                        o();
                     } else {
                         try {
-                            // Попытка анонимного входа
                             await signInAnonymously(c);
                         } catch (error) {
-                            console.error("[ERROR] Ошибка аутентификации Firebase:", error);
-                            console.error("[ERROR] Не удалось аутентифицироваться. Функционал базы данных будет недоступен.");
                         }
                     }
                 });
             } catch (error) {
-                console.error("[ERROR] Критическая ошибка инициализации Firebase:", error);
             }
         }
 
-        // Функция для получения ссылки на коллекцию Firestore
-        function n(p) { // n: getCollectionRef, p: collectionName
+        function n(p) {
             return collection(b, `artifacts/${a.options.projectId}/public/data/${p}`);
         }
 
-        // Логика разрыва соединения между двумя пользователями
-        async function p(user1, user2) { // p: disconnectUsers
-            const q = n('connections'); // q: connectionsCollection
+        async function p(user1, user2) {
+            const q = n('connections');
             const sortedIds = [user1, user2].sort();
             const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
             try {
                 await deleteDoc(doc(q, connectionId));
-                console.log(`[SUCCESS] Соединение ${connectionId} разорвано.`);
             } catch (error) {
-                console.error(`[ERROR] Ошибка при разрыве соединения ${connectionId}:`, error);
             }
         }
 
-        // Логика отправки/принятия приглашения
-        async function q(sender, receiver) { // q: handleInviteLogic
-            const r = n('invites'); // r: invitesCollection
+        async function q(sender, receiver) {
+            const r = n('invites');
 
             try {
-                // Проверка на существующее исходящее приглашение от отправителя к получателю
-                const s = query(r, // s: outgoingInviteQuery
+                const s = query(r,
                     where("senderId", "==", sender),
                     where("receiverId", "==", receiver)
                 );
-                const t = await getDocs(s); // t: outgoingInviteSnapshot
+                const t = await getDocs(s);
 
                 if (!t.empty) {
-                    console.log(`[INFO] Вы уже отправили приглашение ${receiver}.`);
                     return;
                 }
 
-                // Проверка на входящее приглашение от получателя к отправителю
-                const u = query(r, // u: incomingInviteQuery
+                const u = query(r,
                     where("senderId", "==", receiver),
                     where("receiverId", "==", sender)
                 );
-                const v = await getDocs(u); // v: incomingInviteSnapshot
+                const v = await getDocs(u);
 
                 if (!v.empty) {
-                    const w = v.docs[0]; // w: existingInviteDoc
+                    const w = v.docs[0];
                     await updateDoc(doc(r, w.id), { status: "accepted" });
 
-                    const x = n('connections'); // x: connectionsCollection
-                    const y = [sender, receiver].sort(); // y: sortedIds
-                    const z = `${y[0]}+${y[1]}`; // z: connectionId
+                    const x = n('connections');
+                    const y = [sender, receiver].sort();
+                    const z = `${y[0]}+${y[1]}`;
                     await setDoc(doc(x, z), {
                         user1Id: y[0],
                         user2Id: y[1],
                         establishedAt: new Date().toISOString()
                     });
 
-                    console.log(`[SUCCESS] Приглашение от ${receiver} принято! Соединение установлено: ${z}`);
-                    await deleteDoc(doc(r, w.id)); // Удалить приглашение после принятия
+                    await deleteDoc(doc(r, w.id));
                     return;
                 }
 
-                // Отправить новое приглашение
                 await addDoc(r, {
                     senderId: sender,
                     receiverId: receiver,
                     timestamp: new Date().toISOString(),
                     status: "pending"
                 });
-                console.log(`[SUCCESS] Приглашение отправлено ${receiver}. Ожидайте ответа.`);
 
             } catch (error) {
-                console.error("[ERROR] Ошибка при обработке приглашения:", error);
             }
         }
 
-        // Логика просмотра приглашений и соединений
-        async function r_view(userId) { // r_view: viewInvitesLogic
-            const s = n('invites'); // s: invitesCollection
-            const t = n('connections'); // t: connectionsCollection
+        async function r_view(userId) {
+            const s = n('invites');
+            const t = n('connections');
 
-            let u = ''; // u: outputString
+            let u = '';
 
-            // Входящие приглашения (ожидают ответа)
-            const v = query(s, // v: incomingPendingInvitesQuery
+            const v = query(s,
                 where("receiverId", "==", userId),
                 where("status", "==", "pending")
             );
-            const w = await getDocs(v); // w: incomingPendingInvitesSnapshot
+            const w = await getDocs(v);
             if (w.empty) {
                 u += 'Нет входящих приглашений.\n';
             } else {
-                u += 'Входящие приглашения (ожидают ответа):\n';
-                w.forEach(x => { // x: doc
-                    const y = x.data(); // y: inviteData
+                u += 'Входящие приглашения:\n';
+                w.forEach(x => {
+                    const y = x.data();
                     u += `   От: ${y.senderId} (Принять: /?${userId}invite${y.senderId})\n`;
                 });
             }
 
-            // Исходящие приглашения (ожидают ответа)
-            const x = query(s, // x: outgoingPendingInvitesQuery
+            const x = query(s,
                 where("senderId", "==", userId),
                 where("status", "==", "pending")
             );
-            const y = await getDocs(x); // y: outgoingPendingInvitesSnapshot
+            const y = await getDocs(x);
             if (y.empty) {
                 u += 'Нет исходящих приглашений.\n';
             } else {
-                u += 'Исходящие приглашения (ожидают ответа):\n';
-                y.forEach(z => { // z: doc
-                    const A = z.data(); // A: inviteData
-                    u += `   Кому: ${A.receiverId} (Отменить: /?invkill=${userId} - удалит все)\n`;
+                u += 'Исходящие приглашения:\n';
+                y.forEach(z => {
+                    const A = z.data();
+                    u += `   Кому: ${A.receiverId} (Отменить: /?invkill=${userId})\n`;
                 });
             }
 
-            // Активные соединения
-            const z = query(t, where("user1Id", "==", userId)); // z: connectionsWhereUser1
-            const A = query(t, where("user2Id", "==", userId)); // A: connectionsWhereUser2
+            const z = query(t, where("user1Id", "==", userId));
+            const A = query(t, where("user2Id", "==", userId));
 
-            const [B, C] = await Promise.all([ // B: snapshot1, C: snapshot2
+            const [B, C] = await Promise.all([
                 getDocs(z),
                 getDocs(A)
             ]);
 
-            const D = new Set(); // D: uniqueConnections
-            B.forEach(E => { // E: doc
-                const F = E.data(); // F: connectionData
+            const D = new Set();
+            B.forEach(E => {
+                const F = E.data();
                 D.add(`${F.user1Id}+${F.user2Id}`);
             });
-            C.forEach(E => { // E: doc
-                const F = E.data(); // F: connectionData
+            C.forEach(E => {
+                const F = E.data();
                 D.add(`${F.user1Id}+${F.user2Id}`);
             });
 
@@ -207,54 +172,45 @@
                 u += 'Нет активных соединений.\n';
             } else {
                 u += 'Активные соединения:\n';
-                D.forEach(E => { // E: connectionString
+                D.forEach(E => {
                     u += `   ${E} (Отключить: /?disconn=${E})\n`;
                 });
             }
-            console.log(`[INFO] Список приглашений и соединений для ${userId}:\n${u}`);
         }
 
-        // Логика очистки всех ожидающих приглашений для пользователя
-        async function s_clear(userId) { // s_clear: clearMyInvitesLogic
-            const t = n('invites'); // t: invitesCollection
+        async function s_clear(userId) {
+            const t = n('invites');
 
             try {
-                // Удаление исходящих ожидающих приглашений
-                const u = query(t, // u: outgoingPendingInvitesQuery
+                const u = query(t,
                     where("senderId", "==", userId),
                     where("status", "==", "pending")
                 );
-                const v = await getDocs(u); // v: outgoingPendingInvitesSnapshot
-                v.forEach(async (w) => { // w: doc
+                const v = await getDocs(u);
+                v.forEach(async (w) => {
                     await deleteDoc(doc(t, w.id));
                 });
 
-                // Удаление входящих ожидающих приглашений
-                const x = query(t, // x: incomingPendingInvitesQuery
+                const x = query(t,
                     where("receiverId", "==", userId),
                     where("status", "==", "pending")
                 );
-                const y = await getDocs(x); // y: incomingPendingInvitesSnapshot
-                y.forEach(async (z) => { // z: doc
+                const y = await getDocs(x);
+                y.forEach(async (z) => {
                     await deleteDoc(doc(t, z.id));
                 });
 
-                console.log(`[SUCCESS] Все ожидающие приглашения для ${userId} очищены.`);
             } catch (error) {
-                console.error("[ERROR] Ошибка при очистке приглашений:", error);
             }
         }
 
-        // Логика проверки статуса соединения для пользователя
-        async function t_status(userId, fallbackText) { // t_status: checkConnectionStatus
-            const u = n('connections'); // u: connectionsCollection
+        async function t_status(userId, fallbackText) {
+            const u = n('connections');
             try {
-                // Поиск соединений, где пользователь является user1
-                const v = query(u, where("user1Id", "==", userId)); // v: connectionsWhereUser1
-                // Поиск соединений, где пользователь является user2
-                const w = query(u, where("user2Id", "==", userId)); // w: connectionsWhereUser2
+                const v = query(u, where("user1Id", "==", userId));
+                const w = query(u, where("user2Id", "==", userId));
 
-                const [x, y] = await Promise.all([ // x: snapshot1, y: snapshot2
+                const [x, y] = await Promise.all([
                     getDocs(v),
                     getDocs(w)
                 ]);
@@ -262,105 +218,80 @@
                 let connected = false;
                 let connectionString = fallbackText;
 
-                // Проверка соединений, где пользователь - user1
-                x.forEach(z => { // z: doc
-                    const A = z.data(); // A: connectionData
+                x.forEach(z => {
+                    const A = z.data();
                     connected = true;
                     connectionString = `${A.user1Id}+${A.user2Id}`;
                 });
-                // Проверка соединений, где пользователь - user2
-                y.forEach(z => { // z: doc
-                    const A = z.data(); // A: connectionData
+                y.forEach(z => {
+                    const A = z.data();
                     connected = true;
                     connectionString = `${A.user1Id}+${A.user2Id}`;
                 });
-
-                console.log(`[STATUS] Для ID ${userId}: ${connectionString}`);
 
             } catch (error) {
-                console.error("[ERROR] Ошибка при проверке статуса соединения:", error);
-                console.log(`[STATUS] Для ID ${userId}: ${fallbackText} (Ошибка)`);
             }
         }
 
-        // Основная функция обработки URL-параметров
-        async function o() { // o: processUrlParams
-            if (!e || !d) { // Проверка готовности аутентификации и наличия userId
+        async function o() {
+            if (!e || !d) {
                 return;
             }
 
-            const t = new URLSearchParams(window.location.search); // t: urlParams
-            let u = false; // u: paramProcessed - флаг, указывающий, был ли обработан параметр
+            const t = new URLSearchParams(window.location.search);
+            let u = false;
 
-            const v = window.location.search; // v: fullQueryString
-            // Проверка на параметр приглашения вида ?{id}invite{id}
-            const w = v.match(/\?(\w+)invite(\w+)/); // w: inviteMatch
+            const v = window.location.search;
+            const w = v.match(/\?(\w+)invite(\w+)/);
             if (w) {
                 u = true;
-                const x = w[1]; // x: id1
-                const y = w[2]; // y: id2
+                const x = w[1];
+                const y = w[2];
                 if (d === x) {
-                    console.log(`[INFO] Вы пытаетесь отправить приглашение ${y}. Обработка...`);
-                    await q(d, y); // q: handleInviteLogic
+                    await q(d, y);
                 } else if (d === y) {
-                    console.log(`[INFO] Вы получили приглашение от ${x}. Обработка...`);
-                    await q(x, d); // q: handleInviteLogic (отправитель, получатель)
+                    await q(x, d);
                 } else {
-                    console.log("[INFO] Запрос на приглашение не относится к вашему ID.");
                 }
             }
 
-            // Проверка на параметр invlist
-            const x = t.get('invlist'); // x: invlistParam
+            const x = t.get('invlist');
             if (x && x === d) {
                 u = true;
-                console.log(`[INFO] Запрос списка приглашений для ${x}.`);
-                await r_view(d); // r_view: viewInvitesLogic
+                await r_view(d);
             } else if (x && x !== d) {
-                console.log("[ERROR] Вы можете просматривать только свои приглашения.");
             }
 
-            // Проверка на параметр invkill
-            const y = t.get('invkill'); // y: invkillParam
+            const y = t.get('invkill');
             if (y && y === d) {
                 u = true;
-                console.log(`[INFO] Запрос на очистку приглашений для ${y}.`);
-                await s_clear(d); // s_clear: clearMyInvitesLogic
+                await s_clear(d);
             } else if (y && y !== d) {
-                console.log("[ERROR] Вы можете удалять только свои приглашения.");
             }
 
-            // Проверка на параметр disconn
-            const z = t.get('disconn'); // z: disconnParam
+            const z = t.get('disconn');
             if (z) {
                 u = true;
-                const A = z.split('+'); // A: idsToDisconnect
+                const A = z.split('+');
                 if (A.length === 2 && (A[0] === d || A[1] === d)) {
-                    console.log(`[INFO] Запрос на разрыв соединения ${z}.`);
-                    await p(A[0], A[1]); // p: disconnectUsers
+                    await p(A[0], A[1]);
                 } else {
-                    console.log("[ERROR] Неверный формат ID соединения или соединение не относится к вашему ID.");
                 }
             }
 
-            // Проверка на параметр status
-            const A = t.get('status'); // A: statusParam
+            const A = t.get('status');
             if (A && A === d) {
                 u = true;
-                const B = t.get('text') || "Не в коннекте"; // B: fallbackText
-                console.log(`[INFO] Запрос статуса соединения для ${A}.`);
-                await t_status(d, B); // t_status: checkConnectionStatus
+                const B = t.get('text') || "Не в коннекте";
+                await t_status(d, B);
             } else if (A && A !== d) {
-                console.log("[ERROR] Вы можете проверять статус только для своего ID.");
             }
 
-            // Очистка URL-параметров после обработки
             if (u) {
                 history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
-        // Запуск инициализации при загрузке окна
         window.onload = m;
     </script>
 </body>
