@@ -8,36 +8,55 @@
 </head>
 <body>
     <script type="module">
+        // Импорт необходимых модулей Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        let a, b, c, d = null; // app, db, auth, userId
-        let e = false; // isAuthReady
+        // Глобальные переменные для Firebase и состояния приложения
+        let a, b, c, d = null; // a: app, b: db, c: auth, d: userId
+        let e = false; // e: isAuthReady - флаг готовности аутентификации
 
-        // Инициализация Firebase и аутентификация
-        async function m() { // initializeAppAndAuth
+        // Функция инициализации Firebase и аутентификации
+        async function m() { // m: initializeAppAndAuth
             try {
+                // Получение ID приложения из глобальной переменной __app_id, предоставленной средой Canvas
                 const p = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const q = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                let q = null; // q: firebaseConfig, явно null, если не найдена/распарсена
 
-                if (Object.keys(q).length === 0) {
-                    console.error("[ERROR] Ошибка: Конфигурация Firebase не найдена.");
-                    return;
+                // Попытка парсинга конфигурации Firebase из глобальной переменной __firebase_config
+                if (typeof __firebase_config !== 'undefined' && __firebase_config !== null && __firebase_config !== '') {
+                    try {
+                        q = JSON.parse(__firebase_config);
+                    } catch (parseError) {
+                        console.error("[ERROR] Ошибка парсинга конфигурации Firebase:", parseError);
+                        console.error("[ERROR] Конфигурация Firebase недействительна. Функционал базы данных будет недоступен.");
+                        return; // Прекратить выполнение, если парсинг не удался
+                    }
                 }
 
+                // Проверка, является ли конфигурация все еще null или явно недействительной (например, отсутствует projectId)
+                if (!q || !q.projectId || !q.apiKey) {
+                    console.error("[ERROR] Конфигурация Firebase не найдена или неполна. Функционал базы данных будет недоступен.");
+                    console.info("[INFO] Убедитесь, что приложение запущено в среде Canvas или на правильно настроенном веб-сервере.");
+                    return; // Прекратить выполнение, если конфигурация недействительна
+                }
+
+                // Инициализация Firebase
                 a = initializeApp(q);
                 b = getFirestore(a);
                 c = getAuth(a);
 
-                onAuthStateChanged(c, async (r) => {
+                // Слушатель изменений состояния аутентификации
+                onAuthStateChanged(c, async (r) => { // r: user
                     if (r) {
-                        d = r.uid;
-                        e = true;
+                        d = r.uid; // d: userId
+                        e = true; // e: isAuthReady
                         console.log(`[INFO] Ваш ID пользователя: ${d}`);
-                        o(); // Обработка URL-параметров после загрузки ID
+                        o(); // o: processUrlParams - Обработка URL-параметров после загрузки ID
                     } else {
                         try {
+                            // Попытка входа с кастомным токеном или анонимно
                             const s = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
                             if (s) {
                                 await signInWithCustomToken(c, s);
@@ -45,24 +64,26 @@
                                 await signInAnonymously(c);
                             }
                         } catch (error) {
-                            console.error("[ERROR] Ошибка анонимной аутентификации:", error);
+                            console.error("[ERROR] Ошибка аутентификации Firebase:", error);
+                            console.error("[ERROR] Не удалось аутентифицироваться. Функционал базы данных будет недоступен.");
                         }
                     }
                 });
             } catch (error) {
-                console.error("[ERROR] Ошибка инициализации Firebase:", error);
+                console.error("[ERROR] Критическая ошибка инициализации Firebase:", error);
             }
         }
 
-        // Получение ссылки на коллекцию Firestore
-        function n(p) { // getCollectionRef
+        // Функция для получения ссылки на коллекцию Firestore
+        function n(p) { // n: getCollectionRef, p: collectionName
             const q = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            // Путь к публичным данным в Firestore
             return collection(b, `artifacts/${q}/public/data/${p}`);
         }
 
-        // Логика разрыва соединения
-        async function p(user1, user2) { // disconnectUsers
-            const q = n('connections'); // коллекция connections
+        // Логика разрыва соединения между двумя пользователями
+        async function p(user1, user2) { // p: disconnectUsers
+            const q = n('connections'); // q: connectionsCollection
             const sortedIds = [user1, user2].sort();
             const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
             try {
@@ -74,36 +95,36 @@
         }
 
         // Логика отправки/принятия приглашения
-        async function q(sender, receiver) { // handleInviteLogic
-            const r = n('invites'); // коллекция invites
+        async function q(sender, receiver) { // q: handleInviteLogic
+            const r = n('invites'); // r: invitesCollection
 
             try {
-                // Проверка на существующее исходящее приглашение
-                const s = query(r,
+                // Проверка на существующее исходящее приглашение от отправителя к получателю
+                const s = query(r, // s: outgoingInviteQuery
                     where("senderId", "==", sender),
                     where("receiverId", "==", receiver)
                 );
-                const t = await getDocs(s);
+                const t = await getDocs(s); // t: outgoingInviteSnapshot
 
                 if (!t.empty) {
                     console.log(`[INFO] Вы уже отправили приглашение ${receiver}.`);
                     return;
                 }
 
-                // Проверка на входящее приглашение
-                const u = query(r,
+                // Проверка на входящее приглашение от получателя к отправителю
+                const u = query(r, // u: incomingInviteQuery
                     where("senderId", "==", receiver),
                     where("receiverId", "==", sender)
                 );
-                const v = await getDocs(u);
+                const v = await getDocs(u); // v: incomingInviteSnapshot
 
                 if (!v.empty) {
-                    const w = v.docs[0];
+                    const w = v.docs[0]; // w: existingInviteDoc
                     await updateDoc(doc(r, w.id), { status: "accepted" });
 
-                    const x = n('connections'); // коллекция connections
-                    const y = [sender, receiver].sort();
-                    const z = `${y[0]}+${y[1]}`;
+                    const x = n('connections'); // x: connectionsCollection
+                    const y = [sender, receiver].sort(); // y: sortedIds
+                    const z = `${y[0]}+${y[1]}`; // z: connectionId
                     await setDoc(doc(x, z), {
                         user1Id: y[0],
                         user2Id: y[1],
@@ -129,61 +150,61 @@
             }
         }
 
-        // Логика просмотра приглашений
-        async function r_view(userId) { // viewInvitesLogic (переименована во избежание конфликта с r)
-            const s = n('invites');
-            const t = n('connections');
+        // Логика просмотра приглашений и соединений
+        async function r_view(userId) { // r_view: viewInvitesLogic
+            const s = n('invites'); // s: invitesCollection
+            const t = n('connections'); // t: connectionsCollection
 
-            let u = '';
+            let u = ''; // u: outputString
 
-            // Входящие приглашения
-            const v = query(s,
+            // Входящие приглашения (ожидают ответа)
+            const v = query(s, // v: incomingPendingInvitesQuery
                 where("receiverId", "==", userId),
                 where("status", "==", "pending")
             );
-            const w = await getDocs(v);
+            const w = await getDocs(v); // w: incomingPendingInvitesSnapshot
             if (w.empty) {
                 u += 'Нет входящих приглашений.\n';
             } else {
                 u += 'Входящие приглашения (ожидают ответа):\n';
-                w.forEach(x => {
-                    const y = x.data();
+                w.forEach(x => { // x: doc
+                    const y = x.data(); // y: inviteData
                     u += `  От: ${y.senderId} (Принять: /?${userId}invite${y.senderId})\n`;
                 });
             }
 
-            // Исходящие приглашения
-            const x = query(s,
+            // Исходящие приглашения (ожидают ответа)
+            const x = query(s, // x: outgoingPendingInvitesQuery
                 where("senderId", "==", userId),
                 where("status", "==", "pending")
             );
-            const y = await getDocs(x);
+            const y = await getDocs(x); // y: outgoingPendingInvitesSnapshot
             if (y.empty) {
                 u += 'Нет исходящих приглашений.\n';
             } else {
                 u += 'Исходящие приглашения (ожидают ответа):\n';
-                y.forEach(z => {
-                    const A = z.data();
+                y.forEach(z => { // z: doc
+                    const A = z.data(); // A: inviteData
                     u += `  Кому: ${A.receiverId} (Отменить: /?invkill=${userId} - удалит все)\n`;
                 });
             }
 
             // Активные соединения
-            const z = query(t, where("user1Id", "==", userId));
-            const A = query(t, where("user2Id", "==", userId));
+            const z = query(t, where("user1Id", "==", userId)); // z: connectionsWhereUser1
+            const A = query(t, where("user2Id", "==", userId)); // A: connectionsWhereUser2
 
-            const [B, C] = await Promise.all([
+            const [B, C] = await Promise.all([ // B: snapshot1, C: snapshot2
                 getDocs(z),
                 getDocs(A)
             ]);
 
-            const D = new Set();
-            B.forEach(E => {
-                const F = E.data();
+            const D = new Set(); // D: uniqueConnections
+            B.forEach(E => { // E: doc
+                const F = E.data(); // F: connectionData
                 D.add(`${F.user1Id}+${F.user2Id}`);
             });
-            C.forEach(E => {
-                const F = E.data();
+            C.forEach(E => { // E: doc
+                const F = E.data(); // F: connectionData
                 D.add(`${F.user1Id}+${F.user2Id}`);
             });
 
@@ -191,33 +212,35 @@
                 u += 'Нет активных соединений.\n';
             } else {
                 u += 'Активные соединения:\n';
-                D.forEach(E => {
+                D.forEach(E => { // E: connectionString
                     u += `  ${E} (Отключить: /?disconn=${E})\n`;
                 });
             }
             console.log(`[INFO] Список приглашений и соединений для ${userId}:\n${u}`);
         }
 
-        // Логика очистки приглашений
-        async function s_clear(userId) { // clearMyInvitesLogic (переименована во избежание конфликта с s)
-            const t = n('invites');
+        // Логика очистки всех ожидающих приглашений для пользователя
+        async function s_clear(userId) { // s_clear: clearMyInvitesLogic
+            const t = n('invites'); // t: invitesCollection
 
             try {
-                const u = query(t,
+                // Удаление исходящих ожидающих приглашений
+                const u = query(t, // u: outgoingPendingInvitesQuery
                     where("senderId", "==", userId),
                     where("status", "==", "pending")
                 );
-                const v = await getDocs(u);
-                v.forEach(async (w) => {
+                const v = await getDocs(u); // v: outgoingPendingInvitesSnapshot
+                v.forEach(async (w) => { // w: doc
                     await deleteDoc(doc(t, w.id));
                 });
 
-                const x = query(t,
+                // Удаление входящих ожидающих приглашений
+                const x = query(t, // x: incomingPendingInvitesQuery
                     where("receiverId", "==", userId),
                     where("status", "==", "pending")
                 );
-                const y = await getDocs(x);
-                y.forEach(async (z) => {
+                const y = await getDocs(x); // y: incomingPendingInvitesSnapshot
+                y.forEach(async (z) => { // z: doc
                     await deleteDoc(doc(t, z.id));
                 });
 
@@ -227,14 +250,16 @@
             }
         }
 
-        // Логика проверки статуса соединения
-        async function t_status(userId, fallbackText) { // checkConnectionStatus
-            const u = n('connections'); // коллекция connections
+        // Логика проверки статуса соединения для пользователя
+        async function t_status(userId, fallbackText) { // t_status: checkConnectionStatus
+            const u = n('connections'); // u: connectionsCollection
             try {
-                const v = query(u, where("user1Id", "==", userId));
-                const w = query(u, where("user2Id", "==", userId));
+                // Поиск соединений, где пользователь является user1
+                const v = query(u, where("user1Id", "==", userId)); // v: connectionsWhereUser1
+                // Поиск соединений, где пользователь является user2
+                const w = query(u, where("user2Id", "==", userId)); // w: connectionsWhereUser2
 
-                const [x, y] = await Promise.all([
+                const [x, y] = await Promise.all([ // x: snapshot1, y: snapshot2
                     getDocs(v),
                     getDocs(w)
                 ]);
@@ -242,13 +267,15 @@
                 let connected = false;
                 let connectionString = fallbackText;
 
-                x.forEach(z => {
-                    const A = z.data();
+                // Проверка соединений, где пользователь - user1
+                x.forEach(z => { // z: doc
+                    const A = z.data(); // A: connectionData
                     connected = true;
                     connectionString = `${A.user1Id}+${A.user2Id}`;
                 });
-                y.forEach(z => {
-                    const A = z.data();
+                // Проверка соединений, где пользователь - user2
+                y.forEach(z => { // z: doc
+                    const A = z.data(); // A: connectionData
                     connected = true;
                     connectionString = `${A.user1Id}+${A.user2Id}`;
                 });
@@ -262,76 +289,83 @@
         }
 
         // Основная функция обработки URL-параметров
-        async function o() { // processUrlParams
-            if (!e || !d) {
+        async function o() { // o: processUrlParams
+            if (!e || !d) { // Проверка готовности аутентификации и наличия userId
                 return;
             }
 
-            const t = new URLSearchParams(window.location.search);
-            let u = false; // Флаг, указывающий, был ли обработан параметр
+            const t = new URLSearchParams(window.location.search); // t: urlParams
+            let u = false; // u: paramProcessed - флаг, указывающий, был ли обработан параметр
 
-            const v = window.location.search;
-            const w = v.match(/\?(\d+)invite(\d+)/);
+            const v = window.location.search; // v: fullQueryString
+            // Проверка на параметр приглашения вида ?{id}invite{id}
+            const w = v.match(/\?(\d+)invite(\d+)/); // w: inviteMatch
             if (w) {
                 u = true;
-                const x = w[1];
-                const y = w[2];
+                const x = w[1]; // x: id1
+                const y = w[2]; // y: id2
                 if (d === x) {
                     console.log(`[INFO] Вы пытаетесь отправить приглашение ${y}. Обработка...`);
-                    await q(d, y); // Вызов логики отправки/принятия
+                    await q(d, y); // q: handleInviteLogic
                 } else if (d === y) {
                     console.log(`[INFO] Вы получили приглашение от ${x}. Обработка...`);
-                    await q(x, d); // Вызов логики отправки/принятия (отправитель, получатель)
+                    await q(x, d); // q: handleInviteLogic (отправитель, получатель)
                 } else {
                     console.log("[INFO] Запрос на приглашение не относится к вашему ID.");
                 }
             }
 
-            const x = t.get('invlist');
+            // Проверка на параметр invlist
+            const x = t.get('invlist'); // x: invlistParam
             if (x && x === d) {
                 u = true;
                 console.log(`[INFO] Запрос списка приглашений для ${x}.`);
-                await r_view(d); // Вызов логики просмотра приглашений
+                await r_view(d); // r_view: viewInvitesLogic
             } else if (x && x !== d) {
                 console.log("[ERROR] Вы можете просматривать только свои приглашения.");
             }
 
-            const y = t.get('invkill');
+            // Проверка на параметр invkill
+            const y = t.get('invkill'); // y: invkillParam
             if (y && y === d) {
                 u = true;
                 console.log(`[INFO] Запрос на очистку приглашений для ${y}.`);
-                await s_clear(d); // Вызов логики очистки приглашений
+                await s_clear(d); // s_clear: clearMyInvitesLogic
             } else if (y && y !== d) {
                 console.log("[ERROR] Вы можете удалять только свои приглашения.");
             }
 
-            const z = t.get('disconn');
+            // Проверка на параметр disconn
+            const z = t.get('disconn'); // z: disconnParam
             if (z) {
                 u = true;
-                const A = z.split('+');
+                const A = z.split('+'); // A: idsToDisconnect
                 if (A.length === 2 && (A[0] === d || A[1] === d)) {
                     console.log(`[INFO] Запрос на разрыв соединения ${z}.`);
-                    await p(A[0], A[1]); // Вызов логики разрыва соединения
+                    await p(A[0], A[1]); // p: disconnectUsers
                 } else {
                     console.log("[ERROR] Неверный формат ID соединения или соединение не относится к вашему ID.");
                 }
             }
 
-            const A = t.get('status');
+            // Проверка на параметр status
+            const A = t.get('status'); // A: statusParam
             if (A && A === d) {
                 u = true;
-                const B = t.get('text') || "Не в коннекте";
+                const B = t.get('text') || "Не в коннекте"; // B: fallbackText
                 console.log(`[INFO] Запрос статуса соединения для ${A}.`);
-                await t_status(d, B); // Вызов логики проверки статуса
+                await t_status(d, B); // t_status: checkConnectionStatus
             } else if (A && A !== d) {
                 console.log("[ERROR] Вы можете проверять статус только для своего ID.");
             }
 
+            // Очистка URL-параметров после обработки
             if (u) {
                 history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
+        // Запуск инициализации при загрузке окна
         window.onload = m;
     </script>
 </body>
