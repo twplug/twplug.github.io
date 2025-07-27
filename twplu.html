@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TwPlU</title>
+    <title>twlu</title>
 </head>
 <body>
     <script type="module">
@@ -27,28 +27,36 @@
         async function m() {
             try {
                 const q = firebaseConfig;
+                console.log("[DEBUG] Значение q (firebaseConfig):", q);
+                console.log("[DEBUG] Значение q.projectId:", q ? q.projectId : "q is null or undefined");
 
                 if (!q || !q.projectId) {
+                    console.error("[ERROR] Встроенная конфигурация Firebase неполна (отсутствует projectId). Функционал базы данных будет недоступен.");
                     return;
                 }
 
                 a = initializeApp(q);
                 b = getFirestore(a);
                 c = getAuth(a);
+                console.log("[DEBUG] Firebase успешно инициализирован."); // Отладочное сообщение
 
                 onAuthStateChanged(c, async (r) => {
                     if (r) {
                         d = r.uid;
                         e = true;
+                        console.log(`[DEBUG] Пользователь аутентифицирован. UID: ${d}`); // Отладочное сообщение
                         o();
                     } else {
                         try {
+                            console.log("[DEBUG] Пользователь не аутентифицирован. Попытка анонимного входа..."); // Отладочное сообщение
                             await signInAnonymously(c);
                         } catch (error) {
+                            console.error("[ERROR] Ошибка анонимной аутентификации Firebase:", error); // Отладочное сообщение
                         }
                     }
                 });
             } catch (error) {
+                console.error("[ERROR] Критическая ошибка инициализации Firebase:", error); // Отладочное сообщение
             }
         }
 
