@@ -8,7 +8,7 @@
 <body>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Глобальные переменные для Firebase
@@ -53,15 +53,16 @@
                         logStatus("Firebase инициализирован. Ваш ID: " + currentUserId);
                     } else {
                         try {
-                            // Если токен не предоставлен, анонимная аутентификация
+                            // Если токен не предоставлен, анонимная аутентификация удалена.
+                            // Пользователь должен быть аутентифицирован с помощью __initial_auth_token.
                             const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
                             if (initialAuthToken) {
                                 await signInWithCustomToken(firebaseAuth, initialAuthToken);
                             } else {
-                                await signInAnonymously(firebaseAuth);
+                                logError("Пользователь не аутентифицирован. Токен аутентификации не предоставлен.");
                             }
                         } catch (error) {
-                            logError("Ошибка анонимной аутентификации: " + error.message);
+                            logError("Ошибка аутентификации: " + error.message);
                         }
                     }
                 });
@@ -89,7 +90,11 @@
          */
         export async function deleteConnection(user1, user2) {
             if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован.");
+                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
+                return;
+            }
+            if (!user1 || !user2) {
+                logError("Пожалуйста, введите оба ID пользователя для разрыва соединения.");
                 return;
             }
             const connectionsCol = getPublicCollectionRef('connections');
@@ -110,7 +115,11 @@
          */
         export async function sendOrAcceptInvite(senderId, receiverId) {
             if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован.");
+                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
+                return;
+            }
+            if (!senderId || !receiverId) {
+                logError("Пожалуйста, введите ID отправителя и получателя.");
                 return;
             }
             const invitesCol = getPublicCollectionRef('invites');
@@ -176,8 +185,12 @@
          */
         export async function viewUserStatus(userId) {
             if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован.");
+                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
                 return { error: "Пользователь не аутентифицирован." };
+            }
+            if (!userId) {
+                logError("Пожалуйста, введите ID пользователя для просмотра статуса.");
+                return { error: "ID пользователя не указан." };
             }
             const invitesCol = getPublicCollectionRef('invites');
             const connectionsCol = getPublicCollectionRef('connections');
@@ -221,11 +234,11 @@
                 const activeConnectionsSet = new Set();
                 connectionsAsUser1.forEach(doc => {
                     const data = doc.data();
-                    activeConnectionsSet.add(`${data.user1Id}+${data.user2Id}`);
+                    activeConnectionsSet.add(`Соединение: ${data.user1Id} <-> ${data.user2Id} (Установлено: ${new Date(data.establishedAt).toLocaleString()})`);
                 });
                 connectionsAsUser2.forEach(doc => {
                     const data = doc.data();
-                    activeConnectionsSet.add(`${data.user1Id}+${data.user2Id}`);
+                    activeConnectionsSet.add(`Соединение: ${data.user1Id} <-> ${data.user2Id} (Установлено: ${new Date(data.establishedAt).toLocaleString()})`);
                 });
                 statusData.activeConnections = Array.from(activeConnectionsSet);
 
@@ -244,21 +257,27 @@
          */
         export async function clearPendingInvites(userId) {
             if (!isAuthReady || !currentUserId) {
-                logError("Пользователь не аутентифицирован.");
+                logError("Пользователь не аутентифицирован. Дождитесь инициализации Firebase.");
+                return;
+            }
+            if (!userId) {
+                logError("Пожалуйста, введите ID пользователя для очистки приглашений.");
                 return;
             }
             const invitesCol = getPublicCollectionRef('invites');
 
             try {
+                let deletedCount = 0;
                 // Удаляем исходящие приглашения
                 const outgoingQuery = query(invitesCol,
                     where("senderId", "==", userId),
                     where("status", "==", "pending")
                 );
                 const outgoingDocs = await getDocs(outgoingQuery);
-                outgoingDocs.forEach(async (docSnapshot) => {
+                for (const docSnapshot of outgoingDocs.docs) {
                     await deleteDoc(doc(invitesCol, docSnapshot.id));
-                });
+                    deletedCount++;
+                }
 
                 // Удаляем входящие приглашения
                 const incomingQuery = query(invitesCol,
@@ -266,11 +285,12 @@
                     where("status", "==", "pending")
                 );
                 const incomingDocs = await getDocs(incomingQuery);
-                incomingDocs.forEach(async (docSnapshot) => {
+                for (const docSnapshot of incomingDocs.docs) {
                     await deleteDoc(doc(invitesCol, docSnapshot.id));
-                });
+                    deletedCount++;
+                }
 
-                logStatus(`Все ожидающие приглашения для ${userId} очищены.`);
+                logStatus(`Все ожидающие приглашения для ${userId} очищены. Удалено: ${deletedCount}.`);
 
             } catch (error) {
                 logError("Ошибка при очистке приглашений: " + error.message);
