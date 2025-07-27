@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Зашифрованный Мессенджер</title>
+    <title>twplu</title>
 </head>
 <body>
     <script type="module">
@@ -29,32 +29,26 @@
                 const q = firebaseConfig;
 
                 if (!q || !q.projectId) {
-                    console.error("[ERROR] Конфигурация Firebase неполна (отсутствует projectId). Функционал базы данных будет недоступен.");
                     return;
                 }
 
                 a = initializeApp(q);
                 b = getFirestore(a);
                 c = getAuth(a);
-                console.log("[INFO] Firebase успешно инициализирован.");
 
                 onAuthStateChanged(c, async (r) => {
                     if (r) {
                         d = r.uid;
                         e = true;
-                        console.log(`[INFO] Пользователь аутентифицирован. UID: ${d}`);
                         o();
                     } else {
                         try {
-                            console.log("[INFO] Пользователь не аутентифицирован. Попытка анонимного входа...");
                             await signInAnonymously(c);
                         } catch (error) {
-                            console.error("[ERROR] Ошибка анонимной аутентификации Firebase:", error);
                         }
                     }
                 });
             } catch (error) {
-                console.error("[ERROR] Критическая ошибка инициализации Firebase:", error);
             }
         }
 
@@ -68,9 +62,7 @@
             const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
             try {
                 await deleteDoc(doc(q, connectionId));
-                console.log(`[SUCCESS] Соединение ${connectionId} разорвано.`);
             } catch (error) {
-                console.error(`[ERROR] Ошибка при разрыве соединения ${connectionId}:`, error);
             }
         }
 
@@ -85,7 +77,6 @@
                 const t = await getDocs(s);
 
                 if (!t.empty) {
-                    console.log(`[INFO] Вы уже отправили приглашение ${receiver}.`);
                     return;
                 }
 
@@ -108,7 +99,6 @@
                         establishedAt: new Date().toISOString()
                     });
 
-                    console.log(`[SUCCESS] Приглашение от ${receiver} принято! Соединение установлено: ${z}`);
                     await deleteDoc(doc(r, w.id));
                     return;
                 }
@@ -119,10 +109,8 @@
                     timestamp: new Date().toISOString(),
                     status: "pending"
                 });
-                console.log(`[SUCCESS] Приглашение отправлено ${receiver}. Ожидайте ответа.`);
 
             } catch (error) {
-                console.error("[ERROR] Ошибка при обработке приглашения:", error);
             }
         }
 
@@ -188,7 +176,6 @@
                     u += `   ${E} (Отключить: /?disconn=${E})\n`;
                 });
             }
-            console.log(`[INFO] Список приглашений и соединений для ${userId}:\n${u}`);
         }
 
         async function s_clear(userId) {
@@ -213,9 +200,7 @@
                     await deleteDoc(doc(t, z.id));
                 });
 
-                console.log(`[SUCCESS] Все ожидающие приглашения для ${userId} очищены.`);
             } catch (error) {
-                console.error("[ERROR] Ошибка при очистке приглашений:", error);
             }
         }
 
@@ -244,11 +229,7 @@
                     connectionString = `${A.user1Id}+${A.user2Id}`;
                 });
 
-                console.log(`[INFO] Для ID ${userId}: ${connectionString}`);
-
             } catch (error) {
-                console.error("[ERROR] Ошибка при проверке статуса соединения:", error);
-                console.log(`[INFO] Для ID ${userId}: ${fallbackText} (Ошибка)`);
             }
         }
 
@@ -266,55 +247,36 @@
                 u = true;
                 const x = w[1];
                 const y = w[2];
-                if (d === x) {
-                    console.log(`[INFO] Вы пытаетесь отправить приглашение ${y}. Обработка...`);
-                    await q(d, y);
-                } else if (d === y) {
-                    console.log(`[INFO] Вы получили приглашение от ${x}. Обработка...`);
-                    await q(x, d);
-                } else {
-                    console.log("[INFO] Запрос на приглашение не относится к вашему ID.");
-                }
+                // Разрешаем отправку/принятие приглашения между любыми ID
+                await q(x, y);
             }
 
             const x = t.get('invlist');
-            if (x && x === d) {
+            if (x) { // Разрешаем просмотр списка приглашений для любого ID
                 u = true;
-                console.log(`[INFO] Запрос списка приглашений для ${x}.`);
-                await r_view(d);
-            } else if (x && x !== d) {
-                console.log("[ERROR] Вы можете просматривать только свои приглашения.");
+                await r_view(x);
             }
 
             const y = t.get('invkill');
-            if (y && y === d) {
+            if (y) { // Разрешаем очистку приглашений для любого ID
                 u = true;
-                console.log(`[INFO] Запрос на очистку приглашений для ${y}.`);
-                await s_clear(d);
-            } else if (y && y !== d) {
-                console.log("[ERROR] Вы можете удалять только свои приглашения.");
+                await s_clear(y);
             }
 
             const z = t.get('disconn');
             if (z) {
                 u = true;
                 const A = z.split('+');
-                if (A.length === 2 && (A[0] === d || A[1] === d)) {
-                    console.log(`[INFO] Запрос на разрыв соединения ${z}.`);
+                if (A.length === 2) { // Разрешаем разрыв соединения между любыми ID
                     await p(A[0], A[1]);
-                } else {
-                    console.log("[ERROR] Неверный формат ID соединения или соединение не относится к вашему ID.");
                 }
             }
 
             const A = t.get('status');
-            if (A && A === d) {
+            if (A) { // Разрешаем проверку статуса для любого ID
                 u = true;
                 const B = t.get('text') || "Не в коннекте";
-                console.log(`[INFO] Запрос статуса соединения для ${A}.`);
-                await t_status(d, B);
-            } else if (A && A !== d) {
-                console.log("[ERROR] Вы можете проверять статус только для своего ID.");
+                await t_status(A, B);
             }
 
             if (u) {
