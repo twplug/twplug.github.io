@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connector</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Connector</title>
     <style>body{font-family:monospace;white-space:pre;background:#0d1117;color:#c9d1d9;padding:1em;}</style>
 </head>
 <body>
@@ -11,66 +9,52 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script>
-        const x = ["invite", "invites", "connections", "pending", "invlist=", "invkill=", "value", "split", "substring", "startsWith", "includes", "DOMContentLoaded", "innerHTML", "pre", "Система готова.\n\nИнструкции:\n\n> Отправить приглашение:\n?ID_ОТПРАВИТЕЛЯinviteID_ПОЛУЧАТЕЛЯ\n\n> Проверить приглашения для ID:\n?invlist=ID_ПОЛЬЗОВАТЕЛЯ\n\n> Удалить отправленные приглашения для ID:\n?invkill=ID_ОТПРАВИТЕЛЯ", "Ошибка: Неверный формат приглашения. Используйте ?ID1inviteID2", "Соединение установлено: ", "Приглашение отправлено от ", " к ", ". Ожидание ответного приглашения.", "Ошибка: ID пользователя не указан для invlist.", "Отправленные приглашения для ", ":\n", "  - Кому: ", " (статус: ", ")", "\n", "Нет отправленных приглашений для ", ".\n\n", "Входящие приглашения для ", ":\n", "  - От: ", "Входящих приглашений не найдено.", "Ошибка: ID пользователя не указан для invkill.", "Все отправленные приглашения для ", " были удалены.", "Ошибка при удалении приглашений: ", "Неизвестная команда. Проверьте правильность ввода.", "Ошибка: Вы уже отправили приглашение. Отмените его (?invkill=ID_ОТПРАВИТЕЛЯ) или дождитесь ответа."];
-        const y = {apiKey: "AIzaSyCbbbkstsx0b7GMuF2THRZvF7g_IF9bmdY", authDomain: "twplub.firebaseapp.com", databaseURL: "https://twplub-default-rtdb.firebaseio.com", projectId: "twplub", storageBucket: "twplub.firebasestorage.app", messagingSenderId: "774675126793", appId: "1:774675126793:web:d4dbc1c76cca733af8b6d8" };
-        firebase.initializeApp(y);
-        const z = firebase.database();
-        document.addEventListener(x[11], () => {
-            const a = window.location.search[x[8]](1);
-            const b = document.body;
-            const c = (m) => { b[x[12]] = `<${x[13]}>${m}</${x[13]}>`; };
-            if (!a) { c(x[14]); return; }
-            if (a[x[10]](x[0])) {
-                const e = a[x[7]](x[0]);
-                const f = e[0];
-                const g = e[1];
-                if (!f || !g) { c(x[15]); return; }
-                z.ref(`${x[1]}/${f}`).once(x[6], s => {
-                    if (s.exists()) {
-                        c(x[38]);
-                    } else {
-                        z.ref(`${x[1]}/${g}/${f}`).once(x[6], h => {
-                            if (h.exists()) {
-                                const i = `${f}+${g}`;
-                                z.ref(`${x[2]}/${f}`).set(i);
-                                z.ref(`${x[2]}/${g}`).set(i);
-                                z.ref(`${x[1]}/${f}`).remove();
-                                z.ref(`${x[1]}/${g}`).remove();
-                                c(`${x[16]}${i}`);
-                            } else {
-                                z.ref(`${x[1]}/${f}/${g}`).set(x[3]);
-                                c(`${x[17]}${f}${x[18]}${g}${x[19]}`);
+        const x=["invite","invites","connections","pending","invlist=","invkill=","value","split","substring","startsWith","includes","DOMContentLoaded","innerHTML","pre","Система готова.\n\nИнструкции:\n\n> Отправить приглашение:\n?ID_ОТПРАВИТЕЛЯinviteID_ПОЛУЧАТЕЛЯ\n\n> Проверить приглашения для ID:\n?invlist=ID_ПОЛЬЗОВАТЕЛЯ\n\n> Удалить отправленные приглашения для ID:\n?invkill=ID_ОТПРАВИТЕЛЯ\n\n> Проверить статус соединения для ID:\n?status=ID_ПОЛЬЗОВАТЕЛЯ","Ошибка: Неверный формат приглашения. Используйте ?ID1inviteID2","Соединение установлено: ","Приглашение отправлено от "," к ",". Ожидание ответного приглашения.","Ошибка: ID пользователя не указан для invlist.","Отправленные приглашения для ",":\n","  - Кому: "," (статус: ",")","\n","Нет отправленных приглашений для ",".\n\n","Входящие приглашения для ",":\n","  - От: ","Входящих приглашений не найдено.","Ошибка: ID пользователя не указан для invkill.","Все отправленные приглашения для "," были удалены.","Ошибка при удалении приглашений: ","Неизвестная команда. Проверьте правильность ввода.","Ошибка: Вы уже отправили приглашение. Отмените его (?invkill=ID_ОТПРАВИТЕЛЯ) или дождитесь ответа.","status=","Ошибка: ID пользователя не указан для status.","Соединение для ",": ","Нет активного соединения для ","."];
+        const y={apiKey:"AIzaSyCbbbkstsx0b7GMuF2THRZvF7g_IF9bmdY",authDomain:"twplub.firebaseapp.com",databaseURL:"https://twplub-default-rtdb.firebaseio.com",projectId:"twplub",storageBucket:"twplub.firebasestorage.app",messagingSenderId:"774675126793",appId:"1:774675126793:web:d4dbc1c76cca733af8b6d8"};
+        firebase.initializeApp(y);const z=firebase.database();
+        document.addEventListener(x[11],()=>{
+            const a=window.location.search.substring(1);const b=document.body;const c=(m)=>{b.innerHTML=`<${x[13]}>${m}</${x[13]}>`;};
+            if(!a){c(x[14]);return;}
+            if(a.includes(x[0])){
+                const e=a.split(x[0]);const f=e[0];const g=e[1];
+                if(!f||!g){c(x[15]);return;}
+                z.ref(`${x[1]}/${f}`).once(x[6],s=>{
+                    if(s.exists()){c(x[38]);}else{
+                        z.ref(`${x[1]}/${g}/${f}`).once(x[6],h=>{
+                            if(h.exists()){
+                                const i=`${f}+${g}`;z.ref(`${x[2]}/${f}`).set(i);z.ref(`${x[2]}/${g}`).set(i);
+                                z.ref(`${x[1]}/${f}`).remove();z.ref(`${x[1]}/${g}`).remove();c(`${x[16]}${i}`);
+                            }else{
+                                z.ref(`${x[1]}/${f}/${g}`).set(x[3]);c(`${x[17]}${f}${x[18]}${g}${x[19]}`);
                             }
                         });
                     }
-                });
-                return;
+                });return;
             }
-            if (a[x[9]](x[4])) {
-                const j = a[x[7]]('=')[1];
-                if (!j) { c(x[20]); return; }
-                z.ref(`${x[1]}/${j}`).once(x[6], k => {
-                    let l = `${x[27]}${j}${x[28]}`;
-                    if (k.exists()) {
-                        const m = k.val();
-                        const n = Object.keys(m).map(o => `${x[23]}${o}${x[24]}${m[o]}${x[25]}`).join(x[26]);
-                        l = `${x[21]}${j}${x[22]}${n}${x[28]}`;
-                    }
-                    z.ref(x[1]).once(x[6], p => {
-                        let q = x[32];
-                        let r = [];
-                        if (p.exists()) { p.forEach(s => { if (s.val()[j]) { r.push(`${x[31]}${s.key}`); } }); }
-                        if (r.length > 0) { q = `${x[29]}${j}${x[30]}${r.join(x[26])}`; }
+            if(a.startsWith(x[4])){
+                const j=a.split('=')[1];if(!j){c(x[20]);return;}
+                z.ref(`${x[1]}/${j}`).once(x[6],k=>{
+                    let l=`${x[27]}${j}${x[28]}`;
+                    if(k.exists()){const m=k.val();const n=Object.keys(m).map(o=>`${x[23]}${o}${x[24]}${m[o]}${x[25]}`).join(x[26]);l=`${x[21]}${j}${x[22]}${n}${x[28]}`;}
+                    z.ref(x[1]).once(x[6],p=>{
+                        let q=x[32];let r=[];
+                        if(p.exists()){p.forEach(s=>{if(s.val()[j]){r.push(`${x[31]}${s.key}`);}});}
+                        if(r.length>0){q=`${x[29]}${j}${x[30]}${r.join(x[26])}`;}
                         c(`${l}${q}`);
                     });
-                });
+                });return;
+            }
+            if(a.startsWith(x[5])){
+                const t=a.split('=')[1];if(!t){c(x[33]);return;}
+                z.ref(`${x[1]}/${t}`).remove().then(()=>{c(`${x[34]}${t}${x[35]}`);}).catch(e=>{c(`${x[36]}${e.message}`);});
                 return;
             }
-            if (a[x[9]](x[5])) {
-                const t = a[x[7]]('=')[1];
-                if (!t) { c(x[33]); return; }
-                z.ref(`${x[1]}/${t}`).remove().then(() => { c(`${x[34]}${t}${x[35]}`); }).catch(e => { c(`${x[36]}${e.message}`); });
-                return;
+            if(a.startsWith(x[39])){
+                const idToCheck=a.split('=')[1];if(!idToCheck){c(x[40]);return;}
+                z.ref(`${x[2]}/${idToCheck}`).once(x[6],snapshot=>{
+                    if(snapshot.exists()){const connectionValue=snapshot.val();c(`${x[41]}${idToCheck}${x[42]}${connectionValue}`);}
+                    else{c(`${x[43]}${idToCheck}${x[44]}`);}
+                });return;
             }
             c(x[37]);
         });
