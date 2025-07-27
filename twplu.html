@@ -3,288 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>twplu</title>
+    <title>Firebase API (без UI)</title>
 </head>
 <body>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        let a, b, c, d = null;
-        let e = false;
+        // Глобальные переменные для Firebase
+        let firebaseApp;
+        let firestoreDb;
+        let firebaseAuth;
+        let currentUserId = null;
+        let isAuthReady = false;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCbbbkstsx0b7GMuF2THRZvF7g_IF9bmdY",
-            authDomain: "twplub.firebaseapp.com",
-            databaseURL: "https://twplub-default-rtdb.firebaseio.com",
-            projectId: "twplub",
-            storageBucket: "twplub.firebasestorage.app",
-            messagingSenderId: "774675126793",
-            appId: "1:774675126793:web:d4dbc1c76cca733af8b6d8"
-        };
+        // Функции для логирования статуса и ошибок в консоль
+        function logError(message) {
+            console.error(`Ошибка Firebase API: ${message}`);
+        }
 
-        async function m() {
+        function logStatus(message) {
+            console.log(`Статус Firebase API: ${message}`);
+        }
+
+        /**
+         * Инициализирует Firebase и настраивает слушатель состояния аутентификации.
+         * Эта функция должна быть вызвана первой.
+         */
+        export async function initializeFirebaseAPI() {
             try {
-                const q = firebaseConfig;
+                // Используем глобальные переменные, предоставленные средой Canvas
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
-                if (!q || !q.projectId) {
+                if (!firebaseConfig || !firebaseConfig.projectId) {
+                    logError("Firebase config не найден или неполный.");
                     return;
                 }
 
-                a = initializeApp(q);
-                b = getFirestore(a);
-                c = getAuth(a);
+                firebaseApp = initializeApp(firebaseConfig);
+                firestoreDb = getFirestore(firebaseApp);
+                firebaseAuth = getAuth(firebaseApp);
 
-                onAuthStateChanged(c, async (r) => {
-                    if (r) {
-                        d = r.uid;
-                        e = true;
-                        o();
+                onAuthStateChanged(firebaseAuth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        isAuthReady = true;
+                        logStatus("Firebase инициализирован. Ваш ID: " + currentUserId);
                     } else {
                         try {
-                            await signInAnonymously(c);
+                            // Если токен не предоставлен, анонимная аутентификация
+                            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(firebaseAuth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(firebaseAuth);
+                            }
                         } catch (error) {
+                            logError("Ошибка анонимной аутентификации: " + error.message);
                         }
                     }
                 });
             } catch (error) {
+                logError("Ошибка инициализации Firebase: " + error.message);
             }
         }
 
-        function n(p) {
-            return collection(b, `artifacts/${a.options.projectId}/public/data/${p}`);
+        /**
+         * Возвращает ссылку на коллекцию в Firestore.
+         * @param {string} collectionName - Имя коллекции.
+         * @returns {import('firebase/firestore').CollectionReference} Ссылка на коллекцию.
+         */
+        function getPublicCollectionRef(collectionName) {
+            if (!firestoreDb || !firebaseApp || !firebaseApp.options.projectId) {
+                throw new Error("Firebase не инициализирован или projectId отсутствует.");
+            }
+            return collection(firestoreDb, `artifacts/${firebaseApp.options.projectId}/public/data/${collectionName}`);
         }
 
-        async function p(user1, user2) {
-            const q = n('connections');
+        /**
+         * Удаляет существующее соединение между двумя пользователями.
+         * @param {string} user1 - ID первого пользователя.
+         * @param {string} user2 - ID второго пользователя.
+         */
+        export async function deleteConnection(user1, user2) {
+            if (!isAuthReady || !currentUserId) {
+                logError("Пользователь не аутентифицирован.");
+                return;
+            }
+            const connectionsCol = getPublicCollectionRef('connections');
             const sortedIds = [user1, user2].sort();
             const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
             try {
-                await deleteDoc(doc(q, connectionId));
+                await deleteDoc(doc(connectionsCol, connectionId));
+                logStatus(`Соединение ${connectionId} разорвано.`);
             } catch (error) {
+                logError("Ошибка при разрыве соединения: " + error.message);
             }
         }
 
-        async function q(sender, receiver) {
-            const r = n('invites');
+        /**
+         * Отправляет или принимает приглашение на соединение.
+         * @param {string} senderId - ID отправителя.
+         * @param {string} receiverId - ID получателя.
+         */
+        export async function sendOrAcceptInvite(senderId, receiverId) {
+            if (!isAuthReady || !currentUserId) {
+                logError("Пользователь не аутентифицирован.");
+                return;
+            }
+            const invitesCol = getPublicCollectionRef('invites');
 
             try {
-                const s = query(r,
-                    where("senderId", "==", sender),
-                    where("receiverId", "==", receiver)
+                // Проверяем, есть ли уже исходящее приглашение от отправителя к получателю
+                const existingInviteQuery = query(invitesCol,
+                    where("senderId", "==", senderId),
+                    where("receiverId", "==", receiverId)
                 );
-                const t = await getDocs(s);
+                const existingInvites = await getDocs(existingInviteQuery);
 
-                if (!t.empty) {
+                if (!existingInvites.empty) {
+                    logStatus(`Приглашение от ${senderId} к ${receiverId} уже существует.`);
                     return;
                 }
 
-                const u = query(r,
-                    where("senderId", "==", receiver),
-                    where("receiverId", "==", sender)
+                // Проверяем, есть ли входящее приглашение от получателя к отправителю (для принятия)
+                const reverseInviteQuery = query(invitesCol,
+                    where("senderId", "==", receiverId),
+                    where("receiverId", "==", senderId),
+                    where("status", "==", "pending")
                 );
-                const v = await getDocs(u);
+                const reverseInvites = await getDocs(reverseInviteQuery);
 
-                if (!v.empty) {
-                    const w = v.docs[0];
-                    await updateDoc(doc(r, w.id), { status: "accepted" });
+                if (!reverseInvites.empty) {
+                    // Если есть обратное приглашение, принимаем его и создаем соединение
+                    const inviteDoc = reverseInvites.docs[0];
+                    await updateDoc(doc(invitesCol, inviteDoc.id), { status: "accepted" });
 
-                    const x = n('connections');
-                    const y = [sender, receiver].sort();
-                    const z = `${y[0]}+${y[1]}`;
-                    await setDoc(doc(x, z), {
-                        user1Id: y[0],
-                        user2Id: y[1],
+                    const connectionsCol = getPublicCollectionRef('connections');
+                    const sortedIds = [senderId, receiverId].sort();
+                    const connectionId = `${sortedIds[0]}+${sortedIds[1]}`;
+                    await setDoc(doc(connectionsCol, connectionId), {
+                        user1Id: sortedIds[0],
+                        user2Id: sortedIds[1],
                         establishedAt: new Date().toISOString()
                     });
 
-                    await deleteDoc(doc(r, w.id));
+                    await deleteDoc(doc(invitesCol, inviteDoc.id)); // Удаляем приглашение после создания соединения
+                    logStatus(`Приглашение от ${receiverId} принято. Соединение между ${senderId} и ${receiverId} установлено.`);
                     return;
                 }
 
-                await addDoc(r, {
-                    senderId: sender,
-                    receiverId: receiver,
+                // Если нет существующих или обратных приглашений, отправляем новое
+                await addDoc(invitesCol, {
+                    senderId: senderId,
+                    receiverId: receiverId,
                     timestamp: new Date().toISOString(),
                     status: "pending"
                 });
+                logStatus(`Приглашение отправлено от ${senderId} к ${receiverId}.`);
 
             } catch (error) {
+                logError("Ошибка при отправке/принятии приглашения: " + error.message);
             }
         }
 
-        async function r_view(userId) {
-            const s = n('invites');
-            const t = n('connections');
-
-            let u = '';
-
-            const v = query(s,
-                where("receiverId", "==", userId),
-                where("status", "==", "pending")
-            );
-            const w = await getDocs(v);
-            if (w.empty) {
-                u += 'Нет входящих приглашений.\n';
-            } else {
-                u += 'Входящие приглашения (ожидают ответа):\n';
-                w.forEach(x => {
-                    const y = x.data();
-                    u += `   От: ${y.senderId} (Принять: /?${userId}invite${y.senderId})\n`;
-                });
+        /**
+         * Просматривает и возвращает входящие, исходящие приглашения и активные соединения.
+         * @param {string} userId - ID пользователя для просмотра.
+         * @returns {Promise<object>} Объект с приглашениями и соединениями.
+         */
+        export async function viewUserStatus(userId) {
+            if (!isAuthReady || !currentUserId) {
+                logError("Пользователь не аутентифицирован.");
+                return { error: "Пользователь не аутентифицирован." };
             }
+            const invitesCol = getPublicCollectionRef('invites');
+            const connectionsCol = getPublicCollectionRef('connections');
 
-            const x = query(s,
-                where("senderId", "==", userId),
-                where("status", "==", "pending")
-            );
-            const y = await getDocs(x);
-            if (y.empty) {
-                u += 'Нет исходящих приглашений.\n';
-            } else {
-                u += 'Исходящие приглашения (ожидают ответа):\n';
-                y.forEach(z => {
-                    const A = z.data();
-                    u += `   Кому: ${A.receiverId} (Отменить: /?invkill=${userId} - удалит все)\n`;
-                });
-            }
-
-            const z = query(t, where("user1Id", "==", userId));
-            const A = query(t, where("user2Id", "==", userId));
-
-            const [B, C] = await Promise.all([
-                getDocs(z),
-                getDocs(A)
-            ]);
-
-            const D = new Set();
-            B.forEach(E => {
-                const F = E.data();
-                D.add(`${F.user1Id}+${F.user2Id}`);
-            });
-            C.forEach(E => {
-                const F = E.data();
-                D.add(`${F.user1Id}+${F.user2Id}`);
-            });
-
-            if (D.size === 0) {
-                u += 'Нет активных соединений.\n';
-            } else {
-                u += 'Активные соединения:\n';
-                D.forEach(E => {
-                    u += `   ${E} (Отключить: /?disconn=${E})\n`;
-                });
-            }
-        }
-
-        async function s_clear(userId) {
-            const t = n('invites');
+            let statusData = {
+                incomingInvites: [],
+                outgoingInvites: [],
+                activeConnections: []
+            };
 
             try {
-                const u = query(t,
-                    where("senderId", "==", userId),
-                    where("status", "==", "pending")
-                );
-                const v = await getDocs(u);
-                v.forEach(async (w) => {
-                    await deleteDoc(doc(t, w.id));
-                });
-
-                const x = query(t,
+                // Входящие приглашения
+                const incomingInvitesQuery = query(invitesCol,
                     where("receiverId", "==", userId),
                     where("status", "==", "pending")
                 );
-                const y = await getDocs(x);
-                y.forEach(async (z) => {
-                    await deleteDoc(doc(t, z.id));
+                const incomingInvites = await getDocs(incomingInvitesQuery);
+                incomingInvites.forEach(doc => {
+                    statusData.incomingInvites.push(doc.data());
                 });
 
-            } catch (error) {
-            }
-        }
+                // Исходящие приглашения
+                const outgoingInvitesQuery = query(invitesCol,
+                    where("senderId", "==", userId),
+                    where("status", "==", "pending")
+                );
+                const outgoingInvites = await getDocs(outgoingInvitesQuery);
+                outgoingInvites.forEach(doc => {
+                    statusData.outgoingInvites.push(doc.data());
+                });
 
-        async function t_status(userId, fallbackText) {
-            const u = n('connections');
-            try {
-                const v = query(u, where("user1Id", "==", userId));
-                const w = query(u, where("user2Id", "==", userId));
+                // Активные соединения
+                const connectionsAsUser1Query = query(connectionsCol, where("user1Id", "==", userId));
+                const connectionsAsUser2Query = query(connectionsCol, where("user2Id", "==", userId));
 
-                const [x, y] = await Promise.all([
-                    getDocs(v),
-                    getDocs(w)
+                const [connectionsAsUser1, connectionsAsUser2] = await Promise.all([
+                    getDocs(connectionsAsUser1Query),
+                    getDocs(connectionsAsUser2Query)
                 ]);
 
-                let connected = false;
-                let connectionString = fallbackText;
+                const activeConnectionsSet = new Set();
+                connectionsAsUser1.forEach(doc => {
+                    const data = doc.data();
+                    activeConnectionsSet.add(`${data.user1Id}+${data.user2Id}`);
+                });
+                connectionsAsUser2.forEach(doc => {
+                    const data = doc.data();
+                    activeConnectionsSet.add(`${data.user1Id}+${data.user2Id}`);
+                });
+                statusData.activeConnections = Array.from(activeConnectionsSet);
 
-                x.forEach(z => {
-                    const A = z.data();
-                    connected = true;
-                    connectionString = `${A.user1Id}+${A.user2Id}`;
-                });
-                y.forEach(z => {
-                    const A = z.data();
-                    connected = true;
-                    connectionString = `${A.user1Id}+${A.user2Id}`;
-                });
+                logStatus(`Статус для пользователя ${userId}:\n${JSON.stringify(statusData, null, 2)}`);
+                return statusData;
 
             } catch (error) {
+                logError("Ошибка при просмотре статуса: " + error.message);
+                return { error: error.message };
             }
         }
 
-        async function o() {
-            if (!e || !d) {
+        /**
+         * Очищает все ожидающие приглашения, отправленные или полученные пользователем.
+         * @param {string} userId - ID пользователя для очистки приглашений.
+         */
+        export async function clearPendingInvites(userId) {
+            if (!isAuthReady || !currentUserId) {
+                logError("Пользователь не аутентифицирован.");
                 return;
             }
+            const invitesCol = getPublicCollectionRef('invites');
 
-            const t = new URLSearchParams(window.location.search);
-            let u = false;
+            try {
+                // Удаляем исходящие приглашения
+                const outgoingQuery = query(invitesCol,
+                    where("senderId", "==", userId),
+                    where("status", "==", "pending")
+                );
+                const outgoingDocs = await getDocs(outgoingQuery);
+                outgoingDocs.forEach(async (docSnapshot) => {
+                    await deleteDoc(doc(invitesCol, docSnapshot.id));
+                });
 
-            const v = window.location.search;
-            const w = v.match(/\?(\w+)invite(\w+)/);
-            if (w) {
-                u = true;
-                const x = w[1];
-                const y = w[2];
-                // Разрешаем отправку/принятие приглашения между любыми ID
-                await q(x, y);
-            }
+                // Удаляем входящие приглашения
+                const incomingQuery = query(invitesCol,
+                    where("receiverId", "==", userId),
+                    where("status", "==", "pending")
+                );
+                const incomingDocs = await getDocs(incomingQuery);
+                incomingDocs.forEach(async (docSnapshot) => {
+                    await deleteDoc(doc(invitesCol, docSnapshot.id));
+                });
 
-            const x = t.get('invlist');
-            if (x) { // Разрешаем просмотр списка приглашений для любого ID
-                u = true;
-                await r_view(x);
-            }
+                logStatus(`Все ожидающие приглашения для ${userId} очищены.`);
 
-            const y = t.get('invkill');
-            if (y) { // Разрешаем очистку приглашений для любого ID
-                u = true;
-                await s_clear(y);
-            }
-
-            const z = t.get('disconn');
-            if (z) {
-                u = true;
-                const A = z.split('+');
-                if (A.length === 2) { // Разрешаем разрыв соединения между любыми ID
-                    await p(A[0], A[1]);
-                }
-            }
-
-            const A = t.get('status');
-            if (A) { // Разрешаем проверку статуса для любого ID
-                u = true;
-                const B = t.get('text') || "Не в коннекте";
-                await t_status(A, B);
-            }
-
-            if (u) {
-                history.replaceState({}, document.title, window.location.pathname);
+            } catch (error) {
+                logError("Ошибка при очистке приглашений: " + error.message);
             }
         }
 
-        window.onload = m;
+        /**
+         * Возвращает текущий ID пользователя.
+         * @returns {string|null} Текущий ID пользователя или null, если не аутентифицирован.
+         */
+        export function getCurrentUserId() {
+            return currentUserId;
+        }
+
+        /**
+         * Проверяет, готов ли Firebase к работе (пользователь аутентифицирован).
+         * @returns {boolean} True, если Firebase готов, иначе false.
+         */
+        export function isFirebaseReady() {
+            return isAuthReady;
+        }
+
+        // Автоматическая инициализация Firebase при загрузке скрипта
+        // Это позволяет функциям быть доступными сразу после загрузки.
+        initializeFirebaseAPI();
     </script>
 </body>
 </html>
