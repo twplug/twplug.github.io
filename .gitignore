@@ -1,0 +1,25 @@
+# Firebase-specific files to ignore
+firebase.json
+
+# Firebase debug logs
+firebase-debug.log
+
+# Node.js dependencies (if you use Cloud Functions or other Node.js tools)
+node_modules/
+
+# Environment variables (if you use .env files for secrets)
+.env
+
+# npm debug logs
+npm-debug.log*
+
+# Yarn logs
+yarn-debug.log*
+yarn-error.log*
+
+# IDE specific files (e.g., VS Code)
+.vscode/
+
+# Build outputs (if you have a build process, e.g., for React/Vue/Angular)
+build/
+dist/
