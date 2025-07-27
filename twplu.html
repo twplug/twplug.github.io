@@ -193,7 +193,7 @@
             const z = query(t, where("user1Id", "==", userId)); // z: connectionsWhereUser1
             const A = query(t, where("user2Id", "==", userId)); // A: connectionsWhereUser2
 
-            const [B, C] = await Promise.all([ // B: snapshot1, C: snapshot2
+            const [B, C] = await Promise.ll([ // B: snapshot1, C: snapshot2
                 getDocs(z),
                 getDocs(A)
             ]);
