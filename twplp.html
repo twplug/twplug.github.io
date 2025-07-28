@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>twplu</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@font-face {
+font-family: 'Silkscreen Bold';
+src: url('https://raw.githubusercontent.com/twplug/twplug.github.io/main/fonts/silkscreen_bold.ttf') format('truetype');
+}
+@font-face {
+font-family: 'Silkscreen';
+src: url('https://raw.githubusercontent.com/twplug/twplug.github.io/main/fonts/silkscreen-more.otf') format('opentype');
+}
+body { background-color: #121212; }
+#main-container { font-family: 'Silkscreen', sans-serif; background-color: #121212; }
+#username-text { font-family: 'Silkscreen Bold', sans-serif; }
+.rainbow-text span { display: inline-block; }
+#loader {
+position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(0, 0, 0, 0.7);
+display: none; align-items: center; justify-content: center;
+color: white; font-size: 2rem; z-index: 1000;
+}
+</style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+<div id="loader">wait...</div>
+<div id="main-container" class="w-[1720px] h-[720px] max-w-full max-h-full rounded-xl flex">
+<div class="w-2/5 flex items-center justify-center p-8">
+<img id="user-image" src="https://raw.githubusercontent.com/twplug/twplug.github.io/main/images/guse-ebat.png" alt="Изображение" class="max-w-full max-h-full object-contain rounded-lg" crossorigin="anonymous" onerror="this.onerror=null;this.src='https://placehold.co/480x600/2d2d2d/f0f0f0?text=Image+Error';">
+</div>
+<div class="w-3/5 flex flex-col items-start justify-center p-8 text-white">
+<div id="username-text" class="text-5xl mb-4 whitespace-nowrap">@username</div>
+<div id="message-text" class="text-3xl leading-relaxed text-[#D4D4D4]">это просто очень длинное сообщение предоставленное в качестве примера...</div>
+</div>
+</div>
+<script>
+window.onload = () => {
+const params = new URLSearchParams(window.location.search);
+const mainContainer = document.getElementById('main-container');
+const userImage = document.getElementById('user-image');
+const usernameText = document.getElementById('username-text');
+const messageText = document.getElementById('message-text');
+const loader = document.getElementById('loader');
+const username = params.get('username') || '@username';
+const message = params.get('message') || 'это просто очень длинное сообщение предоставленное в качестве примера...';
+const imgSrc = params.get('imgSrc') || 'https://raw.githubusercontent.com/twplug/twplug.github.io/main/images/guse-ebat.png';
+const borderColor = params.get('borderColor');
+const borderWidth = params.get('borderWidth');
+const textColor = params.get('textColor');
+const usernameEffects = (params.get('usernameEffect') || '').split(',').map(effect => effect.trim()).filter(effect => effect !== '');
+const format = params.get('format');
+
+if (borderColor) mainContainer.style.borderColor = borderColor;
+if (borderWidth) {
+mainContainer.style.borderWidth = borderWidth;
+mainContainer.style.borderStyle = 'solid';
+}
+if (textColor) messageText.style.color = textColor;
+userImage.src = imgSrc;
+messageText.textContent = message;
+
+const applyEffect = (effect) => {
+switch (effect) {
+case 'grayscale':case 'black-white':usernameText.style.filter += ' grayscale(100%)';break;
+case 'sepia':usernameText.style.filter += ' sepia(100%)';break;
+case 'saturate':usernameText.style.filter += ' saturate(3)';break;
+case 'hue-rotate-90':usernameText.style.filter += ' hue-rotate(90deg)';break;
+case 'hue-rotate-180':usernameText.style.filter += ' hue-rotate(180deg)';break;
+case 'invert':usernameText.style.filter += ' invert(100%)';break;
+case 'brightness':usernameText.style.filter += ' brightness(2)';break;
+case 'contrast':usernameText.style.filter += ' contrast(2)';break;
+case 'blur':usernameText.style.filter += ' blur(3px)';break;
+case 'opacity-50':usernameText.style.filter += ' opacity(0.5)';break;
+case 'drop-shadow':usernameText.style.filter += ' drop-shadow(3px 3px 5px rgba(0,0,0,0.7))';break;
+case 'fire':usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff, 0 0 38px #ff2d00, 0 0 73px #ff2d00';break;
+case 'neon-green':usernameText.style.color = '#39FF14';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '0 0 5px #39FF14, 0 0 10px #39FF14, 0 0 20px #39FF14, 0 0 40px #39FF14';break;
+case 'neon-blue':usernameText.style.color = '#00FFFF';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '0 0 5px #00FFFF, 0 0 10px #00FFFF, 0 0 20px #00FFFF, 0 0 40px #00FFFF';break;
+case 'ice':usernameText.style.color = '#a4fdfd';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '0 0 5px #00c5c5, 0 0 10px #00c5c5, 2px 2px 3px rgba(0,0,0,0.3)';break;
+case 'hologram':usernameText.style.color = '#ff00de';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '0 0 5px #ff00de, 0 0 10px #ff00de, 0 0 15px #ff00de';break;
+case 'outline-black':usernameText.style.color = 'transparent';usernameText.style.webkitTextStroke = '2px black';break;
+case 'outline-white':usernameText.style.color = 'transparent';usernameText.style.webkitTextStroke = '2px white';break;
+case '3d':usernameText.style.color = '#e0e0e0';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '1px 1px 0px #b0b0b0, 2px 2px 0px #b0b0b0, 3px 3px 0px #b0b0b0, 4px 4px 0px #b0b0b0, 5px 5px 8px rgba(0,0,0,0.5)';break;
+case 'gold':usernameText.style.color = '#ffd700';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '1px 1px 2px rgba(0,0,0,0.5)';break;
+case 'vintage':usernameText.style.color = '#d2ac79';usernameText.style.textShadow += (usernameText.style.textShadow ? ', ' : '') + '2px 2px 2px #3e3e3e';break;
+case 'rainbow':
+const colors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#B3BAFF', '#E0BBE4', '#D291BC'];
+usernameText.classList.add('rainbow-text');
+usernameText.innerHTML = username.split('').map((char, i) => `<span style="color: ${colors[i % colors.length]}">${char}</span>`).join('');
+break;
+default:break;
+}
+};
+
+usernameText.style.filter = '';
+usernameText.style.textShadow = '';
+usernameText.style.webkitTextStroke = '';
+usernameText.style.color = 'white';
+usernameText.innerHTML = username;
+usernameEffects.forEach(effect => applyEffect(effect));
+
+const generateFile = () => {
+if (!format) return;
+loader.style.display = 'flex';
+setTimeout(() => {
+html2canvas(mainContainer, { useCORS: true, allowTaint: true, backgroundColor: '#121212' }).then(canvas => {
+const filename = `user-card-${Date.now()}`;
+if (format === 'png') {
+const link = document.createElement('a');
+link.download = `${filename}.png`;
+link.href = canvas.toDataURL('image/png');
+link.click();
+} else if (format === 'pdf') {
+const { jsPDF } = window.jspdf;
+const pdf = new jsPDF({
+orientation: 'landscape',
+unit: 'px',
+format: [canvas.width, canvas.height]
+});
+pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height);
+pdf.save(`${filename}.pdf`);
+}
+loader.style.display = 'none';
+});
+}, 500);
+};
+generateFile();
+};
+</script>
+</body>
+</html>
