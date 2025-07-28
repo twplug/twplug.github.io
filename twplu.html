@@ -5,7 +5,6 @@
     <style>body{font-family:monospace;white-space:pre;background:#0d1117;color:#c9d1d9;padding:1em;}</style>
 </head>
 <body>
-    Initializing...
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script>
@@ -22,10 +21,10 @@
                     if(s.exists()){c(x[38]);}else{
                         z.ref(`${x[1]}/${g}/${f}`).once(x[6],h=>{
                             if(h.exists()){
-                                const i=`${f}+${g}`;z.ref(`${x[2]}/${f}`).set(i);z.ref(`${x[2]}/${g}`).set(i);
-                                z.ref(`${x[1]}/${f}`).remove();z.ref(`${x[1]}/${g}`).remove();c(`${x[16]}${i}`);
+                                const i=`${f},${g}`;z.ref(`${x[2]}/${f}`).set(i);z.ref(`${x[2]}/${g}`).set(i);
+                                z.ref(`${x[1]}/${f}`).remove();z.ref(`${x[1]}/${g}`).remove();c(i);
                             }else{
-                                z.ref(`${x[1]}/${f}/${g}`).set(x[3]);c(`${x[17]}${f}${x[18]}${g}${x[19]}`);
+                                z.ref(`${x[1]}/${f}/${g}`).set(x[3]);c("wait...");
                             }
                         });
                     }
